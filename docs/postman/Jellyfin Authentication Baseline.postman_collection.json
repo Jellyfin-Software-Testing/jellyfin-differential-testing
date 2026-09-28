@@ -129,6 +129,44 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "AuthenticateByName (v10.9)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"admin123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v109}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }
