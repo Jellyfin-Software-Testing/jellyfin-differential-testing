@@ -1,0 +1,327 @@
+﻿[
+    {
+        "Id": "2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c",
+        "Created": "2026-09-29T10:33:42.632749677Z",
+        "Path": "/jellyfin/jellyfin",
+        "Args": [
+            "--ffmpeg",
+            "/usr/lib/jellyfin-ffmpeg/ffmpeg"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 43218,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-09-29T10:33:43.047788631Z",
+            "FinishedAt": "0001-01-01T00:00:00Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-09-29T10:33:48.160515479Z",
+                        "End": "2026-09-29T10:33:48.349305771Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Healthy\r100     7    0     7    0     0     57      0 --:--:-- --:--:-- --:--:--    57\n"
+                    },
+                    {
+                        "Start": "2026-09-29T10:33:58.350100287Z",
+                        "End": "2026-09-29T10:33:58.420253417Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100     7    0     7    0     0    798      0 --:--:-- --:--:-- --:--:--   875\nHealthy"
+                    },
+                    {
+                        "Start": "2026-09-29T10:34:08.421259873Z",
+                        "End": "2026-09-29T10:34:08.467758835Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100     7    0     7    0     0   1489      0 --:--:-- --:--:-- --:--:--  1750\nHealthy"
+                    },
+                    {
+                        "Start": "2026-09-29T10:34:18.466737362Z",
+                        "End": "2026-09-29T10:34:18.544375021Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100     7    0     7    0     0   2816      0 --:--:-- --:--:-- --:--:--  3500\nHealthy"
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:aae4c5a14aab23df9025de14af9ef3243b0f571100fa664d57113810f78ad021",
+        "ResolvConfPath": "/var/lib/docker/containers/2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c/hostname",
+        "HostsPath": "/var/lib/docker/containers/2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c/hosts",
+        "LogPath": "/var/lib/docker/containers/2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c/2d6f26bd8211fc166f816ea8a34345309e4a52a771526d9f57117fc36bf1045c-json.log",
+        "Name": "/jellyfin-v10.9.0-test",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\media:/media:ro",
+                "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\cache:/cache:rw",
+                "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\config:/config:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "docker_default",
+            "PortBindings": {
+                "8096/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "8097"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": null,
+            "DnsSearch": null,
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\config",
+                "Destination": "/config",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\media",
+                "Destination": "/media",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\v10.9\\cache",
+                "Destination": "/cache",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "2d6f26bd8211",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "8096/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "JELLYFIN_PublishedServerUrl=http://localhost:8097",
+                "TZ=Asia/Ho_Chi_Minh",
+                "LC_ALL=en_US.UTF-8",
+                "LANG=en_US.UTF-8",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HEALTHCHECK_URL=http://localhost:8096/health",
+                "DEBIAN_FRONTEND=noninteractive",
+                "LANGUAGE=en_US:en",
+                "JELLYFIN_DATA_DIR=/config",
+                "JELLYFIN_CACHE_DIR=/cache",
+                "JELLYFIN_CONFIG_DIR=/config/config",
+                "JELLYFIN_LOG_DIR=/config/log",
+                "JELLYFIN_WEB_DIR=/jellyfin/jellyfin-web",
+                "JELLYFIN_FFMPEG=/usr/lib/jellyfin-ffmpeg/ffmpeg",
+                "XDG_CACHE_HOME=/cache",
+                "MALLOC_TRIM_THRESHOLD_=131072",
+                "NVIDIA_VISIBLE_DEVICES=all",
+                "NVIDIA_DRIVER_CAPABILITIES=compute,video,utility"
+            ],
+            "Cmd": null,
+            "Healthcheck": {
+                "Test": [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:8096/health"
+                ],
+                "Interval": 10000000000,
+                "Timeout": 5000000000,
+                "StartPeriod": 15000000000,
+                "Retries": 5
+            },
+            "Image": "jellyfin/jellyfin:10.9.0",
+            "Volumes": {
+                "/cache": {},
+                "/config": {}
+            },
+            "WorkingDir": "",
+            "Entrypoint": [
+                "/jellyfin/jellyfin",
+                "--ffmpeg",
+                "/usr/lib/jellyfin-ffmpeg/ffmpeg"
+            ],
+            "Labels": {
+                "com.docker.compose.config-hash": "555cd6e19ff906cf5520db18dce8ed76e3adcce5005552ee33a41a3ebd7e61a2",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:aae4c5a14aab23df9025de14af9ef3243b0f571100fa664d57113810f78ad021",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "docker",
+                "com.docker.compose.project.config_files": "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker\\docker-compose.yml",
+                "com.docker.compose.project.working_dir": "G:\\STUDY\\HKI_3Year\\SoftwareTesting\\project\\source\\jellyfin-differential-testing\\docker",
+                "com.docker.compose.replace": "jellyfin-v10.9.0-test",
+                "com.docker.compose.service": "jellyfin-v109",
+                "com.docker.compose.version": "5.1.0"
+            },
+            "StopTimeout": 1
+        },
+        "NetworkSettings": {
+            "SandboxID": "6d1a11fef09b65860c1f7c2f71c1271c5c4d6f352479e922b5ac89a97835d401",
+            "SandboxKey": "/var/run/docker/netns/6d1a11fef09b",
+            "Ports": {
+                "8096/tcp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8097"
+                    },
+                    {
+                        "HostIp": "::",
+                        "HostPort": "8097"
+                    }
+                ]
+            },
+            "Networks": {
+                "docker_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "jellyfin-v10.9.0-test",
+                        "jellyfin-v109"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "dd053f2726ec5043fc59dbe53ec332fc6a9489724d997dcc224cd9683d6210b4",
+                    "EndpointID": "9fd07b963a2ac81171eedfca37b08a64783ebd6f53f909d582d813492078cbaa",
+                    "Gateway": "172.20.0.1",
+                    "IPAddress": "172.20.0.2",
+                    "MacAddress": "7e:86:40:de:60:64",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "jellyfin-v10.9.0-test",
+                        "jellyfin-v109",
+                        "2d6f26bd8211"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+            "digest": "sha256:d659991fdbda4d2963c807747fbd1ee237bfd15971a3923158719eb248ddea67",
+            "size": 1999,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]
