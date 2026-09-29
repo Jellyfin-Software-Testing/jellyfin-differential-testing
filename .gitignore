@@ -6,3 +6,5 @@ reports/
 *.html
 
 docs/superpowers/*
+docker/v10.8/config/
+docker/v10.8/cache/
