@@ -1,0 +1,505 @@
+{
+  "info": {
+    "_postman_id": "bffcd5e4-510e-4947-bc18-b4ca3ac652a3",
+    "name": "Jellyfin Auth & Session Verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58516181"
+  },
+  "item": [
+    {
+      "name": "Verify Active Session (v10.9)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.9 Get Sessions - Status 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var sessions = pm.response.json();",
+              "pm.test(\"v10.9 Current Device Session exists in Active Sessions\", function () {",
+              "    var match = sessions.some(function(s) {",
+              "        return s.DeviceId === \"postman-differential-tester\";",
+              "    });",
+              "    pm.expect(match).to.be.true;",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v109}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v109}}/Sessions",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Sessions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Verify Active Session (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.8 Get Sessions - Status 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var sessions = pm.response.json();",
+              "pm.test(\"v10.8 Current Device Session exists in Active Sessions\", function () {",
+              "    var match = sessions.some(function(s) {",
+              "        return s.DeviceId === \"postman-differential-tester\";",
+              "    });",
+              "    pm.expect(match).to.be.true;",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v108}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v108}}/Sessions",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Sessions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AuthenticateByName (v10.9)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.9 Auth Success - Status 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test(\"v10.9 Response contains AccessToken and SessionInfo\", function () {",
+              "    pm.expect(data).to.have.property(\"AccessToken\");",
+              "    pm.expect(data).to.have.property(\"SessionInfo\");",
+              "});",
+              "",
+              "if (data.AccessToken) {",
+              "    pm.environment.set(\"api_key_v109\", data.AccessToken);",
+              "}",
+              "if (data.SessionInfo && data.SessionInfo.Id) {",
+              "    pm.environment.set(\"sessionId_v109\", data.SessionInfo.Id);",
+              "}",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"admin123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v109}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth Negative - Invalid Password (v10.9)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.9 Reject Invalid Password - Status 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"wrong_password_123\"\n}\n"
+        },
+        "url": {
+          "raw": "{{host_v109}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth Negative - Invalid Password (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.8 Reject Invalid Password - Status 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"wrong_password_123\"\n}"
+        },
+        "url": {
+          "raw": "{{host_v108}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AuthenticateByName (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.8 Auth Success - Status 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test(\"v10.8 Response contains AccessToken and SessionInfo\", function () {",
+              "    pm.expect(data).to.have.property(\"AccessToken\");",
+              "    pm.expect(data).to.have.property(\"SessionInfo\");",
+              "});",
+              "",
+              "if (data.AccessToken) {",
+              "    pm.environment.set(\"api_key_v108\", data.AccessToken);",
+              "}",
+              "if (data.SessionInfo && data.SessionInfo.Id) {",
+              "    pm.environment.set(\"sessionId_v108\", data.SessionInfo.Id);",
+              "}",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"admin123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v108}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Logout Session (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.8 Logout Success - Status 200 or 204\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v108}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v108}}/Sessions/Logout",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Sessions",
+            "Logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Logout Session (v10.9)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.9 Logout Success - Status 200 or 204\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v109}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v109}}/Sessions/Logout",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Sessions",
+            "Logout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Verify Token Revoked Post-Logout (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.8 Revoked Token Rejected - Status 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v108}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v108}}/Users/Me",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Users",
+            "Me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Verify Token Revoked Post-Logout (v10.9)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"v10.9 Revoked Token Rejected - Status 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key_v109}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v109}}/Users/Me",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Users",
+            "Me"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
