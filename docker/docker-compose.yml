@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  jellyfin-v108:
+    image: jellyfin/jellyfin:10.8.13
+    container_name: jellyfin-v10.8.13-test
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - LC_ALL=en_US.UTF-8
+      - LANG=en_US.UTF-8
+      - JELLYFIN_PublishedServerUrl=http://localhost:8096
+    volumes:
+      - ./v10.8/config:/config
+      - ./v10.8/cache:/cache
+      - ./v10.8/media:/media:ro  # Read-only để tránh bị sửa dataset
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  jellyfin-v109:
+    image: jellyfin/jellyfin:10.9.0
+    container_name: jellyfin-v10.9.0-test
+    restart: unless-stopped
+    ports:
+      - "8097:8096"  
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - LC_ALL=en_US.UTF-8
+      - LANG=en_US.UTF-8
+      - JELLYFIN_PublishedServerUrl=http://localhost:8097
+    volumes:
+      - ./v10.9/config:/config
+      - ./v10.9/cache:/cache
+      - ./v10.9/media:/media:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
