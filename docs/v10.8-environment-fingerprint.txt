@@ -1,19 +1,10 @@
-=== JELLYFIN CONTAINER FINGERPRINT (v10.8.13) ===
-Date Generated: 2026-09-29
-Container Name: jellyfin-v10.8.13-test
-
---- 1. Jellyfin Version ---
-10.8.13
-
---- 2. FFmpeg Version ---
-ffmpeg version 5.1.4-Jellyfin Copyright (c) 2000-2023 the FFmpeg developers
-
---- 3. OS Version ---
-PRETTY_NAME="Ubuntu 22.04.3 LTS"
-NAME="Ubuntu"
-VERSION_ID="22.04"
-
---- 4. Environment Variables (Timezone & Locale) ---
-TZ=Asia/Ha_Noi
-LC_ALL=en_US.UTF-8
-LANG=en_US.UTF-8
+﻿ffmpeg version 5.1.4-Jellyfin Copyright (c) 2000-2023 the FFmpeg developers
+PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"
+NAME="Debian GNU/Linux"
+VERSION_ID="11"
+VERSION="11 (bullseye)"
+VERSION_CODENAME=bullseye
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
