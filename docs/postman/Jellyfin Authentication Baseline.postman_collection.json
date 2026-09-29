@@ -1,0 +1,172 @@
+{
+  "info": {
+    "_postman_id": "00b08e59-4eaf-477c-bb3e-54d9e94cdf6a",
+    "name": "Jellyfin Authentication Baseline",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58516181"
+  },
+  "item": [
+    {
+      "name": "AuthenticateByName (v10.8)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.AccessToken) {",
+              "    pm.environment.set(\"api_key\", jsonData.AccessToken);",
+              "    console.log(\"Captured AccessToken to api_key: \" + jsonData.AccessToken);",
+              "} else {",
+              "    pm.test(\"Fail: AccessToken missing from response\", function() {",
+              "        pm.expect.fail(\"Response does not contain AccessToken\");",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"admin123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v108}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get System Info (v10.8)",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get System Info (v10.9)",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Current User Me",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Current user has valid Id and Name\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"Id\");",
+              "    pm.expect(jsonData).to.have.property(\"Name\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Emby-Token",
+            "value": "{{api_key}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{host_v108}}/Users/Me",
+          "host": [
+            "{{host_v108}}"
+          ],
+          "path": [
+            "Users",
+            "Me"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "AuthenticateByName (v10.9)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "X-Emby-Authorization",
+            "value": "MediaBrowser Client=\"Postman\", Device=\"Postman\", DeviceId=\"postman-differential-tester\", Version=\"1.0.0\"",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Username\": \"admin\",\n  \"Pw\": \"admin123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{host_v109}}/Users/AuthenticateByName",
+          "host": [
+            "{{host_v109}}"
+          ],
+          "path": [
+            "Users",
+            "AuthenticateByName"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
