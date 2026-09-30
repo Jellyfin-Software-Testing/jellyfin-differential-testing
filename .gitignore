@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 reports/
 *.html
+*.exe
 
 docs/superpowers/*
 docker/v10.8/config/

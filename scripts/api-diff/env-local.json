@@ -1,0 +1,49 @@
+{
+  "id": "g1-09-local-env",
+  "name": "G1-09 Local Environment",
+  "values": [
+    {
+      "key": "jellyfin_v1_base",
+      "value": "http://localhost:8096",
+      "enabled": true,
+      "description": "Jellyfin v1 (baseline) base URL"
+    },
+    {
+      "key": "jellyfin_v2_base",
+      "value": "http://localhost:8097",
+      "enabled": true,
+      "description": "Jellyfin v2 (target) base URL"
+    },
+    {
+      "key": "v1_spec_version",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated after fetching v1 spec"
+    },
+    {
+      "key": "v2_spec_version",
+      "value": "",
+      "enabled": true,
+      "description": "Auto-populated after fetching v2 spec"
+    },
+    {
+      "key": "v1_paths_count",
+      "value": "",
+      "enabled": true,
+      "description": "Number of API paths in v1 spec"
+    },
+    {
+      "key": "v2_paths_count",
+      "value": "",
+      "enabled": true,
+      "description": "Number of API paths in v2 spec"
+    },
+    {
+      "key": "endpoint_delta",
+      "value": "",
+      "enabled": true,
+      "description": "Delta of endpoint counts (v2 - v1)"
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
