@@ -235,6 +235,7 @@ class JellyfinClient:
                 "paths": library["paths"],
                 "refreshLibrary": "true",
             },
+            authenticate=True,
             payload={"LibraryOptions": library["options"]},
         )
         libraries = self.json("GET", "/Library/VirtualFolders", authenticate=True)
