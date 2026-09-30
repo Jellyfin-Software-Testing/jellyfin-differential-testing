@@ -1,0 +1,108 @@
+{
+  "task": "G1-06",
+  "status": "equivalent",
+  "seedFiles": [
+    {
+      "relativePath": "seed-music/01 - Reference Tone.wav",
+      "sha256": "8033c9c459b80d3616131baaf9dd0a698a98cf3d307f013188093586c4f2812e",
+      "bytes": "16044"
+    },
+    {
+      "relativePath": "seed-music/02 - Comparison Tone.wav",
+      "sha256": "11bbb0f0ac3631c3060aee0c2658283840158ea6ff662dad5f15db2296633684",
+      "bytes": "16044"
+    }
+  ],
+  "servers": {
+    "v10.8.13": {
+      "startupCompleted": true,
+      "configuration": {
+        "ServerName": "Jellyfin Differential Test",
+        "UICulture": "en-US",
+        "MetadataCountryCode": "US",
+        "PreferredMetadataLanguage": "en",
+        "EnableRemoteAccess": true,
+        "EnableAutomaticPortMapping": false
+      },
+      "user": {
+        "name": "admin",
+        "isAdministrator": true
+      },
+      "library": {
+        "name": "Differential Seed Music",
+        "collectionType": "music",
+        "locations": [
+          "/media/seed-music"
+        ],
+        "options": {
+          "EnablePhotos": false,
+          "EnableRealtimeMonitor": false,
+          "EnableChapterImageExtraction": false
+        }
+      },
+      "items": [
+        {
+          "name": "01 - Reference Tone",
+          "type": "Audio",
+          "mediaType": "Audio",
+          "path": "/media/seed-music/01 - Reference Tone.wav",
+          "size": null,
+          "runTimeTicks": 10000000
+        },
+        {
+          "name": "02 - Comparison Tone",
+          "type": "Audio",
+          "mediaType": "Audio",
+          "path": "/media/seed-music/02 - Comparison Tone.wav",
+          "size": null,
+          "runTimeTicks": 10000000
+        }
+      ]
+    },
+    "v10.9.0": {
+      "startupCompleted": true,
+      "configuration": {
+        "ServerName": "Jellyfin Differential Test",
+        "UICulture": "en-US",
+        "MetadataCountryCode": "US",
+        "PreferredMetadataLanguage": "en",
+        "EnableRemoteAccess": true,
+        "EnableAutomaticPortMapping": false
+      },
+      "user": {
+        "name": "admin",
+        "isAdministrator": true
+      },
+      "library": {
+        "name": "Differential Seed Music",
+        "collectionType": "music",
+        "locations": [
+          "/media/seed-music"
+        ],
+        "options": {
+          "EnablePhotos": false,
+          "EnableRealtimeMonitor": false,
+          "EnableChapterImageExtraction": false
+        }
+      },
+      "items": [
+        {
+          "name": "01 - Reference Tone",
+          "type": "Audio",
+          "mediaType": "Audio",
+          "path": "/media/seed-music/01 - Reference Tone.wav",
+          "size": null,
+          "runTimeTicks": 10000000
+        },
+        {
+          "name": "02 - Comparison Tone",
+          "type": "Audio",
+          "mediaType": "Audio",
+          "path": "/media/seed-music/02 - Comparison Tone.wav",
+          "size": null,
+          "runTimeTicks": 10000000
+        }
+      ]
+    }
+  }
+}
