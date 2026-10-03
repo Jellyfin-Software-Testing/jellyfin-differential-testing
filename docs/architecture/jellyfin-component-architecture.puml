@@ -1,0 +1,98 @@
+@startuml Jellyfin_Component_Architecture
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam packageStyle rectangle
+
+' --- COLOR PALETTE (Nhã nhặn, dịu mắt, tương phản cao) ---
+skinparam ArrowColor #4A5568
+skinparam ArrowThickness 1.2
+skinparam ComponentBorderColor #718096
+skinparam PackageBorderColor #A0AEC0
+skinparam DatabaseBorderColor #4A5568
+
+title Sơ đồ 1: Kiến trúc Nội tại Hệ thống Jellyfin Media Server (Component Level)
+
+' ============================================================================
+' TẦNG 1: TẦNG CLIENT (NGƯỜI DÙNG CUỐI)
+' ============================================================================
+package "Tầng 1: Client Layer (Giao diện & Ứng dụng người dùng cuối)" #EDF2F7 {
+    component [Web UI\n(jellyfin-web - Trình duyệt Web)] as WebUI #E2E8F0
+    component [Mobile, TV & Desktop Apps\n(Android, iOS, Android TV, Kodi, Roku)] as ClientApps #E2E8F0
+    component [Third-party SDKs & Libraries\n(TypeScript, Kotlin, Swift, Python SDKs)] as SDKs #E2E8F0
+}
+
+' ============================================================================
+' TẦNG 2: TẦNG API (JELLYFIN.API - ASP.NET CORE)
+' ============================================================================
+package "Tầng 2: API Layer (Jellyfin.Api - ASP.NET Core REST & Real-time)" #EBF8FF {
+    component [Authentication Middleware\n- Token Auth (X-Emby-Token)\n- API Key Handlers & QuickConnect] as AuthMW #BEE3F8
+    
+    component [REST API Controllers\n- OpenAPI 3.0 Specification\n- 340+ Endpoints (v10.8) / 355+ Endpoints (v10.9)] as RESTControllers #90CDF4
+    
+    component [WebSocket Handler\n- Sự kiện phiên làm việc thời gian thực\n- Đồng bộ điều khiển từ xa (Remote Control)] as WSHandler #BEE3F8
+
+    AuthMW -right-> RESTControllers : Xác thực Request
+}
+
+' ============================================================================
+' TẦNG 3: TẦNG XỬ LÝ NGHIỆP VỤ (CORE BUSINESS LOGIC - EMBY.SERVER.IMPLEMENTATIONS)
+' ============================================================================
+package "Tầng 3: Core Business Logic Layer (Emby.Server.Implementations)" #FEFCBF {
+    component [PlaybackManager\n(Điều phối Stream & Chuyển mã)] as PlaybackMgr #FAF089
+    component [LibraryManager\n(Quản lý Thư viện Phim, Nhạc & Metadata)] as LibraryMgr #FAF089
+    component [UserManager\n(Quản lý Tài khoản, Phân quyền & Profile)] as UserMgr #FAF089
+    component [SessionManager\n(Quản lý Phiên xem, Thiết bị & Trạng thái)] as SessionMgr #FAF089
+    
+    package "Mô-đun Đặc tả Phiên bản (Version Specific Subsystems)" as Subsystems #FFFDF0 {
+        component [DLNA/UPnP Core\n(Tích hợp trong Core ở v10.8\nChuyển thành Plugin ở v10.9)] as DLNACore #FBD38D
+        component [Lyrics Subsystem\n(Quản lý Lời bài hát\nBổ sung ở v10.9)] as LyricsMgr #FBD38D
+        component [Trickplay Subsystem\n(Xem trước Thumbnail tua video\nBổ sung ở v10.9)] as TrickplayMgr #FBD38D
+    }
+
+    component [Plugin System Manager\n(Quản lý Nạp & Thực thi Plugin mở rộng)] as PluginMgr #CBD5E0
+}
+
+' ============================================================================
+' TẦNG 4: TẦNG HẠ TẦNG & LƯU TRỮ (PERSISTENCE & INFRASTRUCTURE)
+' ============================================================================
+package "Tầng 4: Infrastructure & Storage Layer (Hạ tầng, CSDL & File Media)" #F7FAFC {
+    database [SQLite Database\n(jellyfin.db - Entity Framework Core)] as SQLiteDB #63B3ED
+    storage [File System Storage\n(Media Library: /movies, /music)] as MediaFS #CBD5E0
+    component [In-memory Cache\n(Metadata Cache & Image Memory Cache)] as MemoryCache #E2E8F0
+    component [FFmpeg Transcoding Engine\n(Chuyển mã Video/Audio On-the-Fly)] as FFmpegEngine #E2E8F0
+}
+
+' ============================================================================
+' LUỒNG ĐIỀU HƯỚNG NỘI TẠI (TOP-DOWN FLOW)
+' ============================================================================
+
+' Client gọi xuống API
+WebUI --> AuthMW : HTTP / HTTPS
+ClientApps --> AuthMW : HTTP / HTTPS
+SDKs --> AuthMW : REST Requests
+WebUI ..> WSHandler : WSS (Real-time)
+ClientApps ..> WSHandler : WSS (Real-time)
+
+' API gọi xuống Core
+RESTControllers --> PlaybackMgr
+RESTControllers --> LibraryMgr
+RESTControllers --> UserMgr
+RESTControllers --> SessionMgr
+RESTControllers --> Subsystems
+
+' Core gọi Plugin
+Subsystems -[hidden]down-> PluginMgr
+PlaybackMgr ..> PluginMgr : Hook Events
+
+' Core truy xuất Hạ tầng & Lưu trữ
+UserMgr --> SQLiteDB : Đọc / Ghi cấu hình User
+LibraryMgr --> SQLiteDB : Đọc / Ghi Metadata
+LibraryMgr --> MediaFS : Quét thư mục Media
+LibraryMgr --> MemoryCache : Tra cứu Cache
+PlaybackMgr --> FFmpegEngine : Yêu cầu Transcode video
+PlaybackMgr --> MediaFS : Đọc file gốc Media
+
+@enduml
