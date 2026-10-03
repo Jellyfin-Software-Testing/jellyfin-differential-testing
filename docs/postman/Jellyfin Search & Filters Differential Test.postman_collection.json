@@ -1,0 +1,1104 @@
+{
+  "info": {
+    "_postman_id": "ea606fc9-0091-42ed-826d-84fd7de03ac9",
+    "name": "Jellyfin Search & Filters Differential Test",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58516181"
+  },
+  "item": [
+    {
+      "name": "1. Search Hints - Query Variants",
+      "item": [
+        {
+          "name": "1.1 Search Valid Term (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Search Hints - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.8 Response has SearchHints array\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"SearchHints\");\n    pm.expect(data.SearchHints).to.be.an(\"array\");\n});\n\npm.test(\"v10.8 TotalRecordCount is non-negative\", function () {\n    var data = pm.response.json();\n    pm.expect(data.TotalRecordCount).to.be.at.least(0);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm=Reference&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "Reference"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Search Valid Term (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Search Hints - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.9 Response has SearchHints array\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"SearchHints\");\n    pm.expect(data.SearchHints).to.be.an(\"array\");\n});\n\npm.test(\"v10.9 TotalRecordCount is non-negative\", function () {\n    var data = pm.response.json();\n    pm.expect(data.TotalRecordCount).to.be.at.least(0);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=Reference&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "Reference"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Search Empty Term (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Empty Search Term - Status 200 or 400\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400]);\n});\n\n// Lưu status code để so sánh với v10.9\npm.environment.set(\"empty_search_status_v108\", pm.response.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Search Empty Term (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Empty Search Term - Status 200 or 400\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400]);\n});\n\npm.test(\"DIFF CHECK: Empty Search status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"empty_search_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Search No searchTerm Param (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Missing searchTerm - Record status code\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 500]);\n    pm.environment.set(\"missing_param_status_v108\", pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1.6 Search No searchTerm Param (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Missing searchTerm - Record status code\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 500]);\n});\n\npm.test(\"DIFF CHECK: Missing searchTerm status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"missing_param_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Search Hints - Boundary Lengths",
+      "item": [
+        {
+          "name": "2.1 Search 1 Char (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Single char search - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.8 Response structure valid\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"SearchHints\");\n    pm.expect(data).to.have.property(\"TotalRecordCount\");\n});\n\npm.environment.set(\"boundary_1char_count_v108\", pm.response.json().TotalRecordCount);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm=a&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "a"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.2 Search 1 Char (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Single char search - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"DIFF CHECK: 1 char TotalRecordCount matches v10.8\", function () {\n    var v108Count = parseInt(pm.environment.get(\"boundary_1char_count_v108\"));\n    var v109Count = pm.response.json().TotalRecordCount;\n    pm.expect(v109Count).to.equal(v108Count);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=a&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "a"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.3 Search 255 Chars (v10.8)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"longTerm255\", \"a\".repeat(255));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Search 255 chars - Status 200 or 4xx\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 414]);\n    pm.environment.set(\"boundary_255_status_v108\", pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm={{longTerm255}}&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{longTerm255}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.4 Search 255 Chars (v10.9)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"longTerm255\", \"a\".repeat(255));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Search 255 chars - Status 200 or 4xx\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 414]);\n});\n\npm.test(\"DIFF CHECK: 255 chars status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"boundary_255_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm={{longTerm255}}&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{longTerm255}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.5 Search 1000+ Chars (v10.8)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"longTerm1000\", \"a\".repeat(1001));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Search 1000+ chars - Record status\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 414]);\n    pm.environment.set(\"boundary_1000_status_v108\", pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm={{longTerm1000}}&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{longTerm1000}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2.6 Search 1000+ Chars (v10.9)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"longTerm1000\", \"a\".repeat(1001));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Search 1000+ chars - Record status\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400, 414]);\n});\n\npm.test(\"DIFF CHECK: 1000+ chars status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"boundary_1000_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm={{longTerm1000}}&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{longTerm1000}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Search Hints - Special Characters",
+      "item": [
+        {
+          "name": "3.1 SQL Injection Marker (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 SQL Injection - Server does not crash\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400]);\n});\n\npm.test(\"v10.8 SQL Injection - No 500 error\", function () {\n    pm.expect(pm.response.code).to.not.equal(500);\n});\n\npm.environment.set(\"sql_inject_status_v108\", pm.response.code);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm=' OR 1=1 -- &limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "' OR 1=1 -- "
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.2 SQL Injection Marker (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 SQL Injection - Server does not crash\", function () {\n    pm.expect(pm.response.code).to.be.oneOf([200, 400]);\n});\n\npm.test(\"DIFF CHECK: SQL Injection status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"sql_inject_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=' OR 1=1 -- &limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "' OR 1=1 -- "
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.3 HTML/XSS Payload (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 XSS Payload - No server error\", function () {\n    pm.expect(pm.response.code).to.not.equal(500);\n    pm.environment.set(\"xss_status_v108\", pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm=<script>alert(\"xss\")</script>&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "<script>alert(\"xss\")</script>"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.4 HTML/XSS Payload (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 XSS Payload - No server error\", function () {\n    pm.expect(pm.response.code).to.not.equal(500);\n});\n\npm.test(\"DIFF CHECK: XSS Payload status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"xss_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=<script>alert(\"xss\")</script>&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "<script>alert(\"xss\")</script>"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.5 Unicode CJK & Emoji (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Unicode/Emoji search - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.8 Unicode response structure valid\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"SearchHints\");\n    pm.expect(data).to.have.property(\"TotalRecordCount\");\n});\n\npm.environment.set(\"unicode_count_v108\", pm.response.json().TotalRecordCount);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm=音楽テスト🎵&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "音楽テスト🎵"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.6 Unicode CJK & Emoji (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Unicode/Emoji search - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"DIFF CHECK: Unicode TotalRecordCount matches v10.8\", function () {\n    var v108Count = parseInt(pm.environment.get(\"unicode_count_v108\"));\n    var v109Count = pm.response.json().TotalRecordCount;\n    pm.expect(v109Count).to.equal(v108Count);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm=音楽テスト🎵&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "音楽テスト🎵"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.7 Control Characters (v10.8)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"controlChars\", \"test\\u0000\\u0001\\u001f\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Control chars - No 500 error\", function () {\n    pm.expect(pm.response.code).to.not.equal(500);\n    pm.environment.set(\"control_char_status_v108\", pm.response.code);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Search/Hints?searchTerm={{controlChars}}&limit=10",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{controlChars}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3.8 Control Characters (v10.9)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"controlChars\", \"test\\u0000\\u0001\\u001f\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Control chars - No 500 error\", function () {\n    pm.expect(pm.response.code).to.not.equal(500);\n});\n\npm.test(\"DIFF CHECK: Control chars status matches v10.8\", function () {\n    var v108Status = parseInt(pm.environment.get(\"control_char_status_v108\"));\n    pm.expect(pm.response.code).to.equal(v108Status);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Search/Hints?searchTerm={{controlChars}}&limit=10",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Search",
+                "Hints"
+              ],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "{{controlChars}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Items Filters - Differential",
+      "item": [
+        {
+          "name": "4.1 Get Filters Default (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Get Filters - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.8 Filters response has expected properties\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"Genres\");\n    pm.expect(data.Genres).to.be.an(\"array\");\n});\n\n// Lưu danh sách key để đối chiếu\npm.environment.set(\"filters_keys_v108\", JSON.stringify(Object.keys(pm.response.json())));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Items/Filters",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Items",
+                "Filters"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.2 Get Filters Default (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Get Filters - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"v10.8 Filters response has expected properties\", function () {\n    var data = pm.response.json();\n    pm.expect(data).to.have.property(\"Genres\");\n    pm.expect(data.Genres).to.be.an(\"array\");\n});\n\n// Lưu danh sách key để đối chiếu\npm.environment.set(\"filters_keys_v108\", JSON.stringify(Object.keys(pm.response.json())));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Items/Filters",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Items",
+                "Filters"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.3 Get Filters by Audio Type (v10.8)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.8 Audio Filters - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.environment.set(\"audio_filters_status_v108\", pm.response.code);\npm.environment.set(\"audio_filters_keys_v108\", JSON.stringify(Object.keys(pm.response.json())));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v108}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v108}}/Items/Filters?includeItemTypes=Audio",
+              "host": [
+                "{{host_v108}}"
+              ],
+              "path": [
+                "Items",
+                "Filters"
+              ],
+              "query": [
+                {
+                  "key": "includeItemTypes",
+                  "value": "Audio"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4.4 Get Filters by Audio Type (v10.9)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"v10.9 Audio Filters - Status 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"DIFF CHECK: Audio Filters keys match v10.8\", function () {\n    var v108Keys = JSON.parse(pm.environment.get(\"audio_filters_keys_v108\"));\n    var v109Keys = Object.keys(pm.response.json());\n    pm.expect(v109Keys.sort()).to.deep.equal(v108Keys.sort());\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Emby-Token",
+                "value": "{{api_key_v109}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host_v109}}/Items/Filters?includeItemTypes=Audio",
+              "host": [
+                "{{host_v109}}"
+              ],
+              "path": [
+                "Items",
+                "Filters"
+              ],
+              "query": [
+                {
+                  "key": "includeItemTypes",
+                  "value": "Audio"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
