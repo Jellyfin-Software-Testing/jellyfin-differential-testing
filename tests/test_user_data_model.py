@@ -71,3 +71,53 @@ def test_partitions_and_boundaries():
     assert any(b["case"] == "TRAILING_SLASH" for b in boundaries)
     assert any(b["case"] == "METHOD_NOT_ALLOWED" for b in boundaries)
 
+
+def test_state_machine_happy_path_and_idempotency():
+    # Happy path: Unfavorited -> POST -> Favorited
+    t1 = UserDataTestModel.get_transition(FavoriteState.UNFAVORITED, FavoriteAction.MARK_FAVORITE)
+    assert t1.outcome_type == OutcomeType.SUCCESS
+    assert t1.expected_post_state == FavoriteState.FAVORITED
+    assert t1.allowed_statuses == (200, 204)
+    assert t1.must_preserve_pre_state is False
+
+    # Idempotent: Favorited -> POST -> Favorited
+    t2 = UserDataTestModel.get_transition(FavoriteState.FAVORITED, FavoriteAction.MARK_FAVORITE)
+    assert t2.outcome_type == OutcomeType.IDEMPOTENT_SUCCESS
+    assert t2.expected_post_state == FavoriteState.FAVORITED
+    assert t2.allowed_statuses == (200, 204)
+
+    # Happy path: Favorited -> DELETE -> Unfavorited
+    t3 = UserDataTestModel.get_transition(FavoriteState.FAVORITED, FavoriteAction.UNMARK_FAVORITE)
+    assert t3.outcome_type == OutcomeType.SUCCESS
+    assert t3.expected_post_state == FavoriteState.UNFAVORITED
+    assert t3.allowed_statuses == (200, 204)
+
+    # Idempotent: Unfavorited -> DELETE -> Unfavorited
+    t4 = UserDataTestModel.get_transition(FavoriteState.UNFAVORITED, FavoriteAction.UNMARK_FAVORITE)
+    assert t4.outcome_type == OutcomeType.IDEMPOTENT_SUCCESS
+    assert t4.expected_post_state == FavoriteState.UNFAVORITED
+    assert t4.allowed_statuses == (200, 204)
+
+
+def test_state_machine_rejected_transitions_preserve_state():
+    # Cross-user forbidden attempt must preserve pre-state
+    t_forbidden = UserDataTestModel.get_transition(
+        FavoriteState.UNFAVORITED,
+        FavoriteAction.MARK_FAVORITE,
+        actor=UserRole.OTHER_USER,
+    )
+    assert t_forbidden.outcome_type == OutcomeType.REJECTED_FORBIDDEN
+    assert t_forbidden.expected_post_state == FavoriteState.UNFAVORITED
+    assert t_forbidden.must_preserve_pre_state is True
+
+    # Anonymous attempt must preserve pre-state
+    t_anon = UserDataTestModel.get_transition(
+        FavoriteState.FAVORITED,
+        FavoriteAction.UNMARK_FAVORITE,
+        actor=UserRole.ANONYMOUS,
+    )
+    assert t_anon.outcome_type == OutcomeType.REJECTED_UNAUTHENTICATED
+    assert t_anon.expected_post_state == FavoriteState.FAVORITED
+    assert t_anon.must_preserve_pre_state is True
+
+

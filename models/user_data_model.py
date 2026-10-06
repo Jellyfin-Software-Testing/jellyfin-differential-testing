@@ -169,3 +169,105 @@ class UserDataTestModel:
             {"case": "TRAILING_WHITESPACE", "sample": "758cdd37-3443-3b1b-c7c6-213a5c7179f2 "},
         ]
 
+    @staticmethod
+    def get_transition(
+        pre_state: FavoriteState,
+        action: FavoriteAction,
+        actor: UserRole = UserRole.OWNER,
+        target_user_exists: bool = True,
+        target_item_exists: bool = True,
+    ) -> ExpectedOutcome:
+        """Tính toán ExpectedOutcome cho mọi trạng thái và hành động."""
+        if not target_user_exists or not target_item_exists:
+            return ExpectedOutcome(
+                outcome_type=OutcomeType.REJECTED_NOT_FOUND,
+                expected_post_state=pre_state,
+                allowed_statuses=(404, 400),
+                body_policy="ERROR_BODY_OPTIONAL",
+                must_preserve_pre_state=True,
+            )
+
+        if actor == UserRole.ANONYMOUS:
+            return ExpectedOutcome(
+                outcome_type=OutcomeType.REJECTED_UNAUTHENTICATED,
+                expected_post_state=pre_state,
+                allowed_statuses=(401,),
+                body_policy="ERROR_BODY_OPTIONAL",
+                must_preserve_pre_state=True,
+            )
+
+        if actor == UserRole.OTHER_USER:
+            return ExpectedOutcome(
+                outcome_type=OutcomeType.REJECTED_FORBIDDEN,
+                expected_post_state=pre_state,
+                allowed_statuses=(403, 401),
+                body_policy="ERROR_BODY_OPTIONAL",
+                must_preserve_pre_state=True,
+            )
+
+        # Actor is OWNER or ADMIN acting on user's behalf
+        if action == FavoriteAction.MARK_FAVORITE:
+            is_idempotent = (pre_state == FavoriteState.FAVORITED)
+            return ExpectedOutcome(
+                outcome_type=OutcomeType.IDEMPOTENT_SUCCESS if is_idempotent else OutcomeType.SUCCESS,
+                expected_post_state=FavoriteState.FAVORITED,
+                allowed_statuses=(200, 204),
+                body_policy="REQUIRE_DTO",
+                must_preserve_pre_state=False,
+            )
+        else:  # UNMARK_FAVORITE (DELETE)
+            is_idempotent = (pre_state == FavoriteState.UNFAVORITED)
+            return ExpectedOutcome(
+                outcome_type=OutcomeType.IDEMPOTENT_SUCCESS if is_idempotent else OutcomeType.SUCCESS,
+                expected_post_state=FavoriteState.UNFAVORITED,
+                allowed_statuses=(200, 204),
+                body_policy="REQUIRE_DTO",
+                must_preserve_pre_state=False,
+            )
+
+    @staticmethod
+    def get_lifecycle_isolation_matrix() -> List[Dict[str, Any]]:
+        return [
+            {
+                "step": 0,
+                "name": "BASELINE",
+                "action_user": None,
+                "action": None,
+                "expected_a": FavoriteState.UNFAVORITED,
+                "expected_b": FavoriteState.UNFAVORITED,
+            },
+            {
+                "step": 1,
+                "name": "USER_A_MARKS_FAVORITE",
+                "action_user": UserRole.OWNER,
+                "action": FavoriteAction.MARK_FAVORITE,
+                "expected_a": FavoriteState.FAVORITED,
+                "expected_b": FavoriteState.UNFAVORITED,
+            },
+            {
+                "step": 2,
+                "name": "USER_B_MARKS_FAVORITE",
+                "action_user": UserRole.OTHER_USER,
+                "action": FavoriteAction.MARK_FAVORITE,
+                "expected_a": FavoriteState.FAVORITED,
+                "expected_b": FavoriteState.FAVORITED,
+            },
+            {
+                "step": 3,
+                "name": "USER_A_UNMARKS_FAVORITE",
+                "action_user": UserRole.OWNER,
+                "action": FavoriteAction.UNMARK_FAVORITE,
+                "expected_a": FavoriteState.UNFAVORITED,
+                "expected_b": FavoriteState.FAVORITED,
+            },
+            {
+                "step": 4,
+                "name": "USER_B_UNMARKS_FAVORITE",
+                "action_user": UserRole.OTHER_USER,
+                "action": FavoriteAction.UNMARK_FAVORITE,
+                "expected_a": FavoriteState.UNFAVORITED,
+                "expected_b": FavoriteState.UNFAVORITED,
+            },
+        ]
+
+
