@@ -1,5 +1,4 @@
 import uuid
-import pytest
 from models.user_data_model import (
     UserDataTestModel,
     FavoriteState,
