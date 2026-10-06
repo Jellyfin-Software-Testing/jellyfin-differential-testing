@@ -42,3 +42,32 @@ def test_is_same_guid_distinct_and_malformed():
     assert UserDataTestModel.is_same_guid(None, guid_a) is False
     assert UserDataTestModel.is_same_guid("", "") is False
     assert UserDataTestModel.is_same_guid(None, None) is False
+
+
+def test_partitions_and_boundaries():
+    users = UserDataTestModel.get_user_partitions()
+    assert "VALID_OWNER" in users
+    assert "VALID_OTHER_USER" in users
+    assert "NON_EXISTENT_GUID" in users
+    assert "MALFORMED_STRING" in users
+    assert "EMPTY_OR_WHITESPACE" in users
+
+    items = UserDataTestModel.get_item_partitions()
+    assert "VALID_AUDIO_ITEM" in items
+    assert "VALID_FOLDER_ITEM" in items
+    assert "NON_EXISTENT_GUID" in items
+    assert "RESTRICTED_ITEM" in items
+
+    auth_matrix = UserDataTestModel.get_authorization_matrix()
+    assert len(auth_matrix) >= 5
+    # Verify User B modifying User A is marked as FORBIDDEN
+    cross_user = next(
+        entry for entry in auth_matrix
+        if entry["actor"] == UserRole.OTHER_USER and entry["target_user"] == UserRole.OWNER
+    )
+    assert cross_user["expected_outcome"] == OutcomeType.REJECTED_FORBIDDEN
+
+    boundaries = UserDataTestModel.get_path_and_method_boundaries()
+    assert any(b["case"] == "TRAILING_SLASH" for b in boundaries)
+    assert any(b["case"] == "METHOD_NOT_ALLOWED" for b in boundaries)
+

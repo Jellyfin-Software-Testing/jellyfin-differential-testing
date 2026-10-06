@@ -68,3 +68,104 @@ class UserDataTestModel:
             return uuid_a.int == uuid_b.int
         except (ValueError, AttributeError, TypeError):
             return False
+
+    @staticmethod
+    def get_user_partitions() -> Dict[str, List[Any]]:
+        return {
+            "VALID_OWNER": ["admin"],
+            "VALID_OTHER_USER": ["regular_user_b"],
+            "NON_EXISTENT_GUID": ["00000000-0000-0000-0000-000000000000", "e4a1a3b2-9c12-4c22-b5e1-88c9910d9999"],
+            "MALFORMED_STRING": ["invalid-user-guid", "12345", "../../admin"],
+            "EMPTY_OR_WHITESPACE": ["", "   "],
+        }
+
+    @staticmethod
+    def get_item_partitions() -> Dict[str, List[Any]]:
+        return {
+            "VALID_AUDIO_ITEM": ["01 - Reference Tone", "02 - Comparison Tone"],
+            "VALID_FOLDER_ITEM": ["seed-music"],
+            "NON_EXISTENT_GUID": ["ffffffff-ffff-ffff-ffff-ffffffffffff"],
+            "RESTRICTED_ITEM": ["restricted-library-item-guid"],
+            "MALFORMED_STRING": ["not-an-item", "null", "<script>"],
+            "EMPTY_OR_WHITESPACE": ["", "   "],
+        }
+
+    @staticmethod
+    def get_authorization_matrix() -> List[Dict[str, Any]]:
+        return [
+            {
+                "actor": UserRole.OWNER,
+                "target_user": UserRole.OWNER,
+                "action": FavoriteAction.MARK_FAVORITE,
+                "expected_outcome": OutcomeType.SUCCESS,
+                "allowed_statuses": (200, 204),
+            },
+            {
+                "actor": UserRole.OWNER,
+                "target_user": UserRole.OWNER,
+                "action": FavoriteAction.UNMARK_FAVORITE,
+                "expected_outcome": OutcomeType.SUCCESS,
+                "allowed_statuses": (200, 204),
+            },
+            {
+                "actor": UserRole.OTHER_USER,
+                "target_user": UserRole.OWNER,
+                "action": FavoriteAction.MARK_FAVORITE,
+                "expected_outcome": OutcomeType.REJECTED_FORBIDDEN,
+                "allowed_statuses": (403, 401),
+            },
+            {
+                "actor": UserRole.OTHER_USER,
+                "target_user": UserRole.OWNER,
+                "action": FavoriteAction.UNMARK_FAVORITE,
+                "expected_outcome": OutcomeType.REJECTED_FORBIDDEN,
+                "allowed_statuses": (403, 401),
+            },
+            {
+                "actor": UserRole.ANONYMOUS,
+                "target_user": UserRole.OWNER,
+                "action": FavoriteAction.MARK_FAVORITE,
+                "expected_outcome": OutcomeType.REJECTED_UNAUTHENTICATED,
+                "allowed_statuses": (401,),
+            },
+        ]
+
+    @staticmethod
+    def get_path_and_method_boundaries() -> List[Dict[str, Any]]:
+        return [
+            {
+                "case": "NORMAL_PATH",
+                "template": "/Users/{userId}/FavoriteItems/{id}",
+                "method": "POST",
+                "expected_allowed": True,
+            },
+            {
+                "case": "LOWERCASE_PATH",
+                "template": "/users/{userId}/favoriteitems/{id}",
+                "method": "POST",
+                "expected_allowed": True,
+            },
+            {
+                "case": "TRAILING_SLASH",
+                "template": "/Users/{userId}/FavoriteItems/{id}/",
+                "method": "POST",
+                "expected_allowed": True,
+            },
+            {
+                "case": "METHOD_NOT_ALLOWED",
+                "template": "/Users/{userId}/FavoriteItems/{id}",
+                "method": "GET",
+                "allowed_statuses": (404, 405),
+            },
+        ]
+
+    @staticmethod
+    def get_guid_boundary_cases() -> List[Dict[str, Any]]:
+        return [
+            {"case": "RAW_32_HEX", "sample": "758cdd3734433b1bc7c6213a5c7179f2"},
+            {"case": "HYPHENATED_36", "sample": "758cdd37-3443-3b1b-c7c6-213a5c7179f2"},
+            {"case": "UPPERCASE_HYPHENATED", "sample": "758CDD37-3443-3B1B-C7C6-213A5C7179F2"},
+            {"case": "LEADING_WHITESPACE", "sample": " 758cdd37-3443-3b1b-c7c6-213a5c7179f2"},
+            {"case": "TRAILING_WHITESPACE", "sample": "758cdd37-3443-3b1b-c7c6-213a5c7179f2 "},
+        ]
+
