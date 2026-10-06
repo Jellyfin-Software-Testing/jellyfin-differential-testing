@@ -385,6 +385,100 @@ class UserDataTestModel:
 
         return True, None
 
+    @staticmethod
+    def verify_schema_parity(
+        v108_payload: Dict[str, Any],
+        v109_payload: Dict[str, Any],
+        required_fields: Optional[Set[str]] = None,
+    ) -> Tuple[bool, List[str]]:
+        """Pha 1: So sánh schema structural parity, phát hiện dropped fields hoặc type changes."""
+        diffs: List[str] = []
+        if not isinstance(v108_payload, dict) or not isinstance(v109_payload, dict):
+            return False, ["One or both payloads are not dictionaries"]
+
+        fields_to_check = required_fields or {"IsFavorite", "ItemId"}
+        for f in fields_to_check:
+            if f in v108_payload and f not in v109_payload:
+                diffs.append(f"Field '{f}' dropped in v10.9 response")
+            elif f not in v108_payload and f in v109_payload:
+                diffs.append(f"New field '{f}' appeared in v10.9 response")
+            elif f in v108_payload and f in v109_payload:
+                t108 = type(v108_payload[f])
+                t109 = type(v109_payload[f])
+                if t108 != t109 and v108_payload[f] is not None and v109_payload[f] is not None:
+                    diffs.append(f"Field '{f}' type mutation: v10.8 has {t108.__name__}, v10.9 has {t109.__name__}")
+
+        return len(diffs) == 0, diffs
+
+    @staticmethod
+    def verify_semantic_parity(
+        v108_result: Dict[str, Any],
+        v109_result: Dict[str, Any],
+    ) -> Tuple[bool, List[str]]:
+        """Pha 2: So sánh logic nghiệp vụ và state transition semantics."""
+        diffs: List[str] = []
+        if v108_result.get("is_favorite") != v109_result.get("is_favorite"):
+            diffs.append(
+                f"Semantic state mismatch: v10.8 is_favorite={v108_result.get('is_favorite')}, "
+                f"v10.9 is_favorite={v109_result.get('is_favorite')}"
+            )
+        return len(diffs) == 0, diffs
+
+    @staticmethod
+    def verify_normalized_payload_parity(
+        v108_payload: Dict[str, Any],
+        v109_payload: Dict[str, Any],
+        ignored_fields: Optional[Set[str]] = None,
+    ) -> Tuple[bool, Any]:
+        """Pha 3: So sánh raw payload sau khi loại trừ các trường dynamic noise."""
+        from deepdiff import DeepDiff
+
+        ignore = ignored_fields or {"ServerId", "LastPlayedDate", "Key", "PlaybackPositionTicks"}
+        filtered_108 = {k: v for k, v in v108_payload.items() if k not in ignore}
+        filtered_109 = {k: v for k, v in v109_payload.items() if k not in ignore}
+
+        diff = DeepDiff(filtered_108, filtered_109, ignore_string_case=True)
+        return len(diff) == 0, diff
+
+    @staticmethod
+    def classify_differential_discrepancy(
+        v108_resp: Dict[str, Any],
+        v109_resp: Dict[str, Any],
+        v108_persisted: FavoriteState,
+        v109_persisted: FavoriteState,
+        is_cross_user_attempt: bool = False,
+    ) -> Optional[DiffCategory]:
+        """Phân loại bản chất của sự sai lệch giữa v10.8 và v10.9."""
+        status_108 = v108_resp.get("status_code")
+        status_109 = v109_resp.get("status_code")
+
+        # 1. Security Regression Check
+        if is_cross_user_attempt:
+            if status_108 in (401, 403) and status_109 in (200, 204):
+                return DiffCategory.SECURITY_REGRESSION
+            if status_109 in (401, 403) and status_108 in (200, 204):
+                return DiffCategory.SECURITY_REGRESSION
+
+        # 2. Semantic Regression Check
+        if v108_persisted != v109_persisted:
+            return DiffCategory.SEMANTIC_REGRESSION
+
+        # 3. Schema Regression Check
+        body_108 = v108_resp.get("body")
+        body_109 = v109_resp.get("body")
+        if isinstance(body_108, dict) and isinstance(body_109, dict):
+            ok_schema, _ = UserDataTestModel.verify_schema_parity(body_108, body_109)
+            if not ok_schema:
+                return DiffCategory.SCHEMA_REGRESSION
+
+        # 4. Benign Status Drift Check
+        if status_108 != status_109 and {status_108, status_109}.issubset({200, 204}):
+            if v108_persisted == v109_persisted:
+                return DiffCategory.BENIGN_STATUS_DRIFT
+
+        return None
+
+
 
 
 

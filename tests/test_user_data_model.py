@@ -240,5 +240,59 @@ def test_verify_two_way_lifecycle_isolation():
     assert err is None
 
 
+def test_verify_schema_parity():
+    v108 = {"ItemId": "guid", "IsFavorite": True, "PlayCount": 0}
+    v109_ok = {"ItemId": "guid", "IsFavorite": True, "PlayCount": 1}
+    v109_dropped_field = {"ItemId": "guid", "PlayCount": 0}  # Missing IsFavorite
+
+    ok, diffs = UserDataTestModel.verify_schema_parity(v108, v109_ok)
+    assert ok is True
+    assert len(diffs) == 0
+
+    ok_dropped, diffs_dropped = UserDataTestModel.verify_schema_parity(v108, v109_dropped_field)
+    assert ok_dropped is False
+    assert any("IsFavorite" in d for d in diffs_dropped)
+
+
+def test_classify_differential_discrepancy():
+    # 1. Benign status drift: 204 vs 200 with both successfully persisting True
+    cat1 = UserDataTestModel.classify_differential_discrepancy(
+        v108_resp={"status_code": 204, "body": None},
+        v109_resp={"status_code": 200, "body": {"IsFavorite": True}},
+        v108_persisted=FavoriteState.FAVORITED,
+        v109_persisted=FavoriteState.FAVORITED,
+    )
+    assert cat1 == DiffCategory.BENIGN_STATUS_DRIFT
+
+    # 2. Schema regression: v109 dropped field
+    cat2 = UserDataTestModel.classify_differential_discrepancy(
+        v108_resp={"status_code": 200, "body": {"IsFavorite": True, "ItemId": "g"}},
+        v109_resp={"status_code": 200, "body": {"ItemId": "g"}},  # dropped IsFavorite
+        v108_persisted=FavoriteState.FAVORITED,
+        v109_persisted=FavoriteState.FAVORITED,
+    )
+    assert cat2 == DiffCategory.SCHEMA_REGRESSION
+
+    # 3. Semantic regression: v109 failed to persist
+    cat3 = UserDataTestModel.classify_differential_discrepancy(
+        v108_resp={"status_code": 200, "body": {"IsFavorite": True}},
+        v109_resp={"status_code": 200, "body": {"IsFavorite": True}},
+        v108_persisted=FavoriteState.FAVORITED,
+        v109_persisted=FavoriteState.UNFAVORITED,  # failed to persist
+    )
+    assert cat3 == DiffCategory.SEMANTIC_REGRESSION
+
+    # 4. Security regression: v108 returns 403 (blocked) but v109 returns 200 (allowed)
+    cat4 = UserDataTestModel.classify_differential_discrepancy(
+        v108_resp={"status_code": 403, "body": None},
+        v109_resp={"status_code": 200, "body": {"IsFavorite": True}},
+        v108_persisted=FavoriteState.UNFAVORITED,
+        v109_persisted=FavoriteState.FAVORITED,
+        is_cross_user_attempt=True,
+    )
+    assert cat4 == DiffCategory.SECURITY_REGRESSION
+
+
+
 
 
