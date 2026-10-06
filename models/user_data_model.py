@@ -270,4 +270,52 @@ class UserDataTestModel:
             },
         ]
 
+    @staticmethod
+    def verify_action_invariants(
+        action: FavoriteAction,
+        status_code: int,
+        response_data: Any,
+        target_item_id: str,
+        allowed_statuses: Iterable[int] = (200, 204),
+    ) -> Tuple[bool, Optional[str]]:
+        """Xác thực phản hồi trực tiếp (Tầng 1) của POST/DELETE FavoriteItems."""
+        allowed_set = set(allowed_statuses)
+        if status_code not in allowed_set:
+            return False, f"HTTP status {status_code} not in allowed statuses {allowed_set}"
+
+        expected_is_favorite = (action == FavoriteAction.MARK_FAVORITE)
+
+        # Case 1: HTTP 204 No Content
+        if status_code == 204:
+            if response_data not in (None, "", b"", {}):
+                return False, "HTTP 204 must have no body"
+            return True, None
+
+        # Case 2: HTTP 200 OK
+        if status_code == 200:
+            if not isinstance(response_data, dict) or not response_data:
+                return False, "HTTP 200 rejects empty or invalid DTO body"
+
+            if "IsFavorite" not in response_data:
+                return False, "Response DTO missing required field 'IsFavorite'"
+
+            actual_is_fav = response_data.get("IsFavorite")
+            if actual_is_fav != expected_is_favorite:
+                return False, f"Action {action.value} expected IsFavorite to be {expected_is_favorite}, got {actual_is_fav}"
+
+            item_id_in_dto = response_data.get("ItemId")
+            if item_id_in_dto is not None:
+                if not UserDataTestModel.is_same_guid(item_id_in_dto, target_item_id):
+                    return False, f"ItemId in DTO '{item_id_in_dto}' does not match target item '{target_item_id}'"
+
+            play_count = response_data.get("PlayCount")
+            if play_count is not None and (not isinstance(play_count, int) or play_count < 0):
+                return False, f"Invalid PlayCount in DTO: {play_count}"
+
+            return True, None
+
+        # Case 3: Error statuses (401, 403, 404, etc.)
+        return True, None
+
+
 

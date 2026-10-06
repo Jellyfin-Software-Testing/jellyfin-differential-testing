@@ -121,3 +121,79 @@ def test_state_machine_rejected_transitions_preserve_state():
     assert t_anon.must_preserve_pre_state is True
 
 
+def test_verify_action_invariants_status_200_valid_dto():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    valid_dto = {
+        "ItemId": "758cdd3734433b1bc7c6213a5c7179f2",
+        "IsFavorite": True,
+        "PlayCount": 0,
+        "PlaybackPositionTicks": 0,
+        "Played": False,
+        "Key": "02 - Comparison Tone",
+    }
+    ok, err = UserDataTestModel.verify_action_invariants(
+        action=FavoriteAction.MARK_FAVORITE,
+        status_code=200,
+        response_data=valid_dto,
+        target_item_id=target_id,
+    )
+    assert ok is True
+    assert err is None
+
+
+def test_verify_action_invariants_status_200_empty_body_contract_violation():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    ok, err = UserDataTestModel.verify_action_invariants(
+        action=FavoriteAction.MARK_FAVORITE,
+        status_code=200,
+        response_data={},  # Empty body on 200 is a contract violation
+        target_item_id=target_id,
+    )
+    assert ok is False
+    assert "empty or invalid dto body" in err.lower()
+
+
+
+def test_verify_action_invariants_status_204_no_body():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    # 204 with None or empty string body passes
+    ok, err = UserDataTestModel.verify_action_invariants(
+        action=FavoriteAction.MARK_FAVORITE,
+        status_code=204,
+        response_data=None,
+        target_item_id=target_id,
+    )
+    assert ok is True
+    assert err is None
+
+
+def test_verify_action_invariants_status_204_with_body_contract_violation():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    ok, err = UserDataTestModel.verify_action_invariants(
+        action=FavoriteAction.MARK_FAVORITE,
+        status_code=204,
+        response_data={"IsFavorite": True},  # 204 must NOT contain body
+        target_item_id=target_id,
+    )
+    assert ok is False
+    assert "204 must have no body" in err.lower()
+
+
+def test_verify_action_invariants_inverted_is_favorite():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    invalid_dto = {
+        "ItemId": target_id,
+        "IsFavorite": False,  # Should be True for MARK_FAVORITE
+        "PlayCount": 0,
+    }
+    ok, err = UserDataTestModel.verify_action_invariants(
+        action=FavoriteAction.MARK_FAVORITE,
+        status_code=200,
+        response_data=invalid_dto,
+        target_item_id=target_id,
+    )
+    assert ok is False
+    assert "expected IsFavorite to be True" in err
+
+
+
