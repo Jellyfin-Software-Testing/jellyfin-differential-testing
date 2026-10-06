@@ -196,4 +196,49 @@ def test_verify_action_invariants_inverted_is_favorite():
     assert "expected IsFavorite to be True" in err
 
 
+def test_verify_item_persistence():
+    item_fav = {"Id": "item-1", "UserData": {"IsFavorite": True}}
+    item_unfav = {"Id": "item-1", "UserData": {"IsFavorite": False}}
+
+    assert UserDataTestModel.verify_item_persistence(FavoriteState.FAVORITED, item_fav)[0] is True
+    assert UserDataTestModel.verify_item_persistence(FavoriteState.UNFAVORITED, item_unfav)[0] is True
+    assert UserDataTestModel.verify_item_persistence(FavoriteState.FAVORITED, item_unfav)[0] is False
+
+
+def test_verify_collection_persistence():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    coll_containing = {
+        "Items": [{"Id": "758cdd3734433b1bc7c6213a5c7179f2", "Name": "Tone"}],
+        "TotalRecordCount": 1,
+    }
+    coll_empty = {"Items": [], "TotalRecordCount": 0}
+
+    # FAVORITED must contain item
+    assert UserDataTestModel.verify_collection_persistence(FavoriteState.FAVORITED, target_id, coll_containing)[0] is True
+    assert UserDataTestModel.verify_collection_persistence(FavoriteState.FAVORITED, target_id, coll_empty)[0] is False
+
+    # UNFAVORITED must NOT contain item
+    assert UserDataTestModel.verify_collection_persistence(FavoriteState.UNFAVORITED, target_id, coll_empty)[0] is True
+    assert UserDataTestModel.verify_collection_persistence(FavoriteState.UNFAVORITED, target_id, coll_containing)[0] is False
+
+
+def test_verify_two_way_lifecycle_isolation():
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    # Step 3: A unmarks (A=False), but B is still marked (B=True)
+    user_a_data = {"Id": target_id, "UserData": {"IsFavorite": False}}
+    user_b_data = {"Id": target_id, "UserData": {"IsFavorite": True}}
+
+    ok, err = UserDataTestModel.verify_two_way_isolation_step(
+        step_name="USER_A_UNMARKS_FAVORITE",
+        user_a_state=FavoriteState.UNFAVORITED,
+        user_b_state=FavoriteState.FAVORITED,
+        user_a_item_data=user_a_data,
+        user_b_item_data=user_b_data,
+        target_item_id=target_id,
+    )
+    assert ok is True
+    assert err is None
+
+
+
 

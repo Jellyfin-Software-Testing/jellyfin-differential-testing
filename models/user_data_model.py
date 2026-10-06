@@ -317,5 +317,74 @@ class UserDataTestModel:
         # Case 3: Error statuses (401, 403, 404, etc.)
         return True, None
 
+    @staticmethod
+    def verify_item_persistence(
+        expected_state: FavoriteState,
+        item_response_data: Dict[str, Any],
+    ) -> Tuple[bool, Optional[str]]:
+        """Xác thực trường UserData.IsFavorite từ endpoint GET /Users/{userId}/Items/{id}."""
+        if not isinstance(item_response_data, dict):
+            return False, "Item response data is not a dictionary"
+
+        user_data = item_response_data.get("UserData")
+        if not isinstance(user_data, dict):
+            return False, "Item response data is missing 'UserData' dictionary"
+
+        expected_bool = (expected_state == FavoriteState.FAVORITED)
+        actual_bool = user_data.get("IsFavorite")
+        if actual_bool != expected_bool:
+            return False, f"Expected UserData.IsFavorite to be {expected_bool}, got {actual_bool}"
+
+        return True, None
+
+    @staticmethod
+    def verify_collection_persistence(
+        expected_state: FavoriteState,
+        target_item_id: str,
+        collection_response_data: Dict[str, Any],
+    ) -> Tuple[bool, Optional[str]]:
+        """Xác thực sự hiện diện của item trong GET /Users/{userId}/Items?isFavorite=true."""
+        if not isinstance(collection_response_data, dict):
+            return False, "Collection response data is not a dictionary"
+
+        items = collection_response_data.get("Items")
+        if not isinstance(items, list):
+            return False, "Collection response data is missing 'Items' list"
+
+        item_present = any(
+            UserDataTestModel.is_same_guid(item.get("Id"), target_item_id)
+            for item in items
+            if isinstance(item, dict)
+        )
+
+        if expected_state == FavoriteState.FAVORITED and not item_present:
+            return False, f"Expected item {target_item_id} to be present in favorite collection, but was missing"
+
+        if expected_state == FavoriteState.UNFAVORITED and item_present:
+            return False, f"Expected item {target_item_id} to be ABSENT from favorite collection, but was present"
+
+        return True, None
+
+    @staticmethod
+    def verify_two_way_isolation_step(
+        step_name: str,
+        user_a_state: FavoriteState,
+        user_b_state: FavoriteState,
+        user_a_item_data: Dict[str, Any],
+        user_b_item_data: Dict[str, Any],
+        target_item_id: str,
+    ) -> Tuple[bool, Optional[str]]:
+        """Xác thực tính cô lập hai chiều giữa User A và User B tại mỗi bước của vòng đời."""
+        ok_a, err_a = UserDataTestModel.verify_item_persistence(user_a_state, user_a_item_data)
+        if not ok_a:
+            return False, f"[{step_name}] User A isolation failure: {err_a}"
+
+        ok_b, err_b = UserDataTestModel.verify_item_persistence(user_b_state, user_b_item_data)
+        if not ok_b:
+            return False, f"[{step_name}] User B isolation failure: {err_b}"
+
+        return True, None
+
+
 
 
