@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Deterministic, version-controlled seed data for G1-06 initial-state parity.",
+  "generator": "deterministic-pcm-wave",
+  "files": [
+    {
+      "relativePath": "seed-music/01 - Reference Tone.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 440,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/02 - Comparison Tone.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 660,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    }
+  ],
+  "startup": {
+    "serverName": "Jellyfin Differential Test",
+    "uiCulture": "en-US",
+    "metadataCountryCode": "US",
+    "preferredMetadataLanguage": "en"
+  },
+  "remoteAccess": {
+    "enableRemoteAccess": true,
+    "enableAutomaticPortMapping": false
+  },
+  "library": {
+    "name": "Differential Seed Music",
+    "collectionType": "music",
+    "paths": [
+      "/media/seed-music"
+    ],
+    "options": {
+      "EnablePhotos": false,
+      "EnableRealtimeMonitor": false,
+      "EnableChapterImageExtraction": false
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "========================================================================",
+    "BỘ LỌC NHIỄU ĐỘNG (MASKING & IGNORING RULES) CHO RESPONSE NORMALIZER",
+    "========================================================================",
+    "Chức năng tổng thể: Hướng dẫn Normalizer cách làm sạch/chuẩn hóa JSON ",
+    "trước khi đưa vào Differential Comparator để tránh báo lỗi giả (False Positives).",
+    "",
+    "Tóm tắt chức năng các loại Action:",
+    "- DROP          : Xóa hoàn toàn key/value khỏi JSON để bỏ qua so sánh ",
+    "                  (dành cho Token, Timestamp ngẫu nhiên).",
+    "- REGEX_REPLACE : Tìm và thay thế chuỗi con bằng regex để che (mask) các ",
+    "                  giá trị động trong một cấu trúc cố định (vd: URL stream).",
+    "- MAP_STATE     : Đối chiếu và quy đổi ID (Primary Key) giữa 2 Database ",
+    "                  nhờ bảng ánh xạ sinh ra từ bước Seed Data.",
+    "========================================================================"
+  ],
+  "rules": [
+    {
+      "path": "$.AccessToken",
+      "action": "DROP",
+      "description": "Bỏ qua token xác thực sinh ra ngẫu nhiên mỗi lần login"
+    },
+    {
+      "path": "$.SessionId",
+      "action": "DROP",
+      "description": "Bỏ qua ID phiên làm việc sinh ra ngẫu nhiên"
+    },
+    {
+      "path": "$.ServerId",
+      "action": "DROP",
+      "description": "Bỏ qua ID hệ thống của server (khác nhau giữa 2 container)"
+    },
+    {
+      "path": "$.MediaSources[*].TranscodingUrl",
+      "action": "REGEX_REPLACE",
+      "pattern": "(?<=SessionId=)[a-zA-Z0-9]+",
+      "replacement": "<MASKED_SESSION>",
+      "description": "Che đoạn SessionId ngẫu nhiên trong URL stream, nhưng vẫn giữ nguyên phần còn lại để so sánh cấu trúc codec/format"
+    },
+    {
+      "path": "$.Id",
+      "action": "MAP_STATE",
+      "description": "Ánh xạ (Map) ID của các Media Item giữa DB v10.8 và v10.9 để nhận diện chúng là một"
+    },
+    {
+      "path": "$.User.Id",
+      "action": "MAP_STATE",
+      "description": "Ánh xạ ID của User giữa 2 phiên bản"
+    }
+  ]
+}

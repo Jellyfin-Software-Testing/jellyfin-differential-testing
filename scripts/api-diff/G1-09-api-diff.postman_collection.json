@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "G1-09 — Fetch Jellyfin OpenAPI Specs",
+    "description": "Thu thập OpenAPI spec từ 2 instance Jellyfin (v1 baseline và v2 target) để chuẩn bị cho api-diff.\n\nCách chạy:\n  newman run G1-09-api-diff.postman_collection.json -e env-local.json\n\nSau khi chạy, dùng PowerShell:\n  .\\scripts\\api-diff\\run-api-diff.ps1",
+    "_postman_id": "g1-09-jellyfin-api-diff",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "jellyfin_v1_base",
+      "value": "http://localhost:8096",
+      "type": "string",
+      "description": "Base URL của Jellyfin v1 instance (baseline)"
+    },
+    {
+      "key": "jellyfin_v2_base",
+      "value": "http://localhost:8097",
+      "type": "string",
+      "description": "Base URL của Jellyfin v2 instance (target)"
+    }
+  ],
+  "item": [
+    {
+      "name": "Phase 1: Fetch Specs",
+      "item": [
+        {
+          "name": "Fetch OpenAPI Spec — Jellyfin v1 (Baseline)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "console.log('[G1-09] Starting fetch of Jellyfin v1 OpenAPI spec...');",
+                  "console.log('[G1-09] Target URL: ' + pm.variables.get('jellyfin_v1_base') + '/api-docs/openapi.json');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// ── Test Suite: G1-09 Baseline Spec Fetch ──",
+                  "",
+                  "pm.test('[G1-09-T01] Status 200 — v1 spec fetched successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T02] Content-Type is application/json', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T03] Response is valid JSON', () => {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "const spec = pm.response.json();",
+                  "",
+                  "pm.test('[G1-09-T04] OpenAPI version field present', () => {",
+                  "    pm.expect(spec).to.have.any.keys('openapi', 'swagger');",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T05] API info object present', () => {",
+                  "    pm.expect(spec).to.have.property('info');",
+                  "    pm.expect(spec.info).to.have.property('version');",
+                  "    pm.expect(spec.info).to.have.property('title');",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T06] Paths object present and non-empty', () => {",
+                  "    pm.expect(spec).to.have.property('paths');",
+                  "    const pathCount = Object.keys(spec.paths || {}).length;",
+                  "    pm.expect(pathCount).to.be.greaterThan(0, 'paths object is empty!');",
+                  "});",
+                  "",
+                  "// Store spec metadata for downstream use",
+                  "const v1Version   = spec.info?.version   ?? 'unknown';",
+                  "const v1PathCount = Object.keys(spec.paths ?? {}).length;",
+                  "const v1Title     = spec.info?.title     ?? 'Jellyfin';",
+                  "",
+                  "pm.environment.set('v1_spec_version',    v1Version);",
+                  "pm.environment.set('v1_paths_count',     String(v1PathCount));",
+                  "pm.environment.set('v1_openapi_version', spec.openapi ?? spec.swagger ?? 'unknown');",
+                  "",
+                  "console.log('[G1-09] v1 spec fetched successfully');",
+                  "console.log('  Title  :', v1Title);",
+                  "console.log('  Version:', v1Version);",
+                  "console.log('  Paths  :', v1PathCount);",
+                  "",
+                  "// Save spec to file via environment variable (for Newman --export-environment)",
+                  "// Note: large specs may be truncated — use oasdiff directly for full comparison",
+                  "if (pm.response.responseSize < 5 * 1024 * 1024) {  // < 5MB",
+                  "    pm.environment.set('v1_spec_snippet', JSON.stringify({",
+                  "        version: v1Version,",
+                  "        pathCount: v1PathCount,",
+                  "        openapi: spec.openapi ?? spec.swagger",
+                  "    }));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{jellyfin_v1_base}}/api-docs/openapi.json",
+              "host": ["{{jellyfin_v1_base}}"],
+              "path": ["api-docs", "openapi.json"]
+            },
+            "description": "Fetch OpenAPI 3.0 specification từ Jellyfin v1 instance.\nEndpoint này được Jellyfin expose mặc định tại /api-docs/openapi.json"
+          }
+        },
+        {
+          "name": "Fetch OpenAPI Spec — Jellyfin v2 (Target)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "console.log('[G1-09] Starting fetch of Jellyfin v2 OpenAPI spec...');",
+                  "",
+                  "// Verify v1 was fetched first",
+                  "const v1Version = pm.environment.get('v1_spec_version');",
+                  "if (!v1Version) {",
+                  "    console.warn('[G1-09] WARNING: v1 spec not fetched yet. Run request 1 first.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// ── Test Suite: G1-09 Target Spec Fetch ──",
+                  "",
+                  "pm.test('[G1-09-T07] Status 200 — v2 spec fetched successfully', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T08] Response is valid JSON', () => {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "const spec = pm.response.json();",
+                  "",
+                  "pm.test('[G1-09-T09] OpenAPI version field present', () => {",
+                  "    pm.expect(spec).to.have.any.keys('openapi', 'swagger');",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T10] Paths object non-empty', () => {",
+                  "    const pathCount = Object.keys(spec.paths ?? {}).length;",
+                  "    pm.expect(pathCount).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "const v2Version   = spec.info?.version   ?? 'unknown';",
+                  "const v2PathCount = Object.keys(spec.paths ?? {}).length;",
+                  "const v1PathCount = parseInt(pm.environment.get('v1_paths_count') ?? '0');",
+                  "const v1Version   = pm.environment.get('v1_spec_version') ?? 'unknown';",
+                  "const delta       = v2PathCount - v1PathCount;",
+                  "",
+                  "pm.environment.set('v2_spec_version', v2Version);",
+                  "pm.environment.set('v2_paths_count',  String(v2PathCount));",
+                  "pm.environment.set('endpoint_delta',  String(delta));",
+                  "",
+                  "console.log('[G1-09] v2 spec fetched successfully');",
+                  "console.log('  Version:', v2Version);",
+                  "console.log('  Paths  :', v2PathCount);",
+                  "console.log('  Delta vs v1:', delta > 0 ? '+' + delta : delta);",
+                  "",
+                  "pm.test('[G1-09-T11] v1 and v2 have different versions (expected for diff)', () => {",
+                  "    pm.expect(v2Version).to.not.equal(v1Version,",
+                  "        `WARN: Both specs report same version (${v1Version}). May be same instance!`);",
+                  "});",
+                  "",
+                  "pm.test('[G1-09-T12] Endpoint count delta is within reasonable bounds (<50)', () => {",
+                  "    pm.expect(Math.abs(delta)).to.be.lessThan(50,",
+                  "        `Large delta detected: ${delta} endpoints. Verify you have correct spec files.`);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{jellyfin_v2_base}}/api-docs/openapi.json",
+              "host": ["{{jellyfin_v2_base}}"],
+              "path": ["api-docs", "openapi.json"]
+            },
+            "description": "Fetch OpenAPI 3.0 specification từ Jellyfin v2 instance (target version for comparison)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phase 2: Verification",
+      "item": [
+        {
+          "name": "[Verify] Cross-version Spec Health Check",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const v1 = pm.environment.get('v1_spec_version');",
+                  "const v2 = pm.environment.get('v2_spec_version');",
+                  "if (!v1 || !v2) {",
+                  "    throw new Error('[G1-09] Both v1 and v2 specs must be fetched first! Run Phase 1 requests.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// ── Cross-version Metadata Summary ──",
+                  "",
+                  "pm.test('[G1-09-T13] v1 System/Info/Public accessible', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const info = pm.response.json();",
+                  "",
+                  "pm.test('[G1-09-T14] System version returned', () => {",
+                  "    pm.expect(info).to.have.property('Version');",
+                  "});",
+                  "",
+                  "const v1Version   = pm.environment.get('v1_spec_version');",
+                  "const v2Version   = pm.environment.get('v2_spec_version');",
+                  "const v1Count     = pm.environment.get('v1_paths_count');",
+                  "const v2Count     = pm.environment.get('v2_paths_count');",
+                  "const delta       = pm.environment.get('endpoint_delta');",
+                  "",
+                  "console.log('');",
+                  "console.log('=== G1-09 Pre-Diff Summary ===');",
+                  "console.log('v1 (baseline) : ' + v1Version + ' | ' + v1Count + ' endpoints');",
+                  "console.log('v2 (target)   : ' + v2Version + ' | ' + v2Count + ' endpoints');",
+                  "console.log('Endpoint delta : ' + (delta >= 0 ? '+' : '') + delta);",
+                  "console.log('');",
+                  "console.log('Next step: Run run-api-diff.ps1 with the downloaded spec files.');",
+                  "console.log('  .\\\\scripts\\\\api-diff\\\\run-api-diff.ps1');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jellyfin_v1_base}}/System/Info/Public",
+              "host": ["{{jellyfin_v1_base}}"],
+              "path": ["System", "Info", "Public"]
+            },
+            "description": "Verify v1 system connectivity và lấy metadata"
+          }
+        }
+      ]
+    }
+  ]
+}

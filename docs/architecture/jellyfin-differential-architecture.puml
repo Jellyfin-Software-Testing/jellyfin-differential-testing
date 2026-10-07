@@ -1,0 +1,114 @@
+@startuml Jellyfin_Differential_Testing_Architecture
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam packageStyle rectangle
+
+' --- COLOR PALETTE (Nhã nhặn, dịu mắt, tương phản cao) ---
+skinparam ArrowColor #4A5568
+skinparam ArrowThickness 1.2
+skinparam ComponentBorderColor #718096
+skinparam PackageBorderColor #A0AEC0
+skinparam DatabaseBorderColor #4A5568
+
+title Sơ đồ 2: Kiến trúc Khung Kiểm thử Vi sai & Vị trí Tương tác Đa phiên bản (Diff Level)
+
+' ============================================================================
+' TẦNG 1: INPUT & DISPATCHER (DIFFERENTIAL TEST HARNESS - TRÊN CÙNG)
+' ============================================================================
+package "Tầng Phát Sinh & Điều Phối Kiểm Thử (Test Input & Dispatcher Layer)" #EDF2F7 {
+    component [Test Dataset & Vector Generator\n- Kịch bản cURL từ OpenAPI Spec\n- Stateful Sequences & Replay Seeds] as InputGen #E2E8F0
+    
+    component [Dual Traffic Dispatcher\n(HTTP Client Wrapper - Bắn song song/tuần tự)] as Dispatcher #BEE3F8
+    
+    InputGen -right-> Dispatcher : Nạp Test Vectors
+}
+
+' ============================================================================
+' TẦNG 2: HỆ THỐNG MỤC TIÊU - SUT (KIẾN TRÚC PHÂN TẦNG JELLYFIN DUAL-INSTANCE DOCKER)
+' ============================================================================
+package "Target Environment: SUT (Kiến trúc Hệ thống Jellyfin Dual-Instance Docker)" #F7FAFC {
+
+    ' --- INSTANCE 1: BASELINE V10.8 (BÊN TRÁI) ---
+    package "Jellyfin Instance 1 (Baseline: v10.8.13)\n[Port: 8096]" as Instance1 #EBF8FF {
+        component [REST API Layer (Jellyfin.Api v10.8)\n- 340+ Endpoints (OpenAPI 3.0)\n- Định danh URL: /Users/{userId}/...] as API1 #90CDF4
+        
+        component [Core Business Services (Emby.Server.Implementations)\n- LibraryManager, PlaybackManager, SessionManager\n- UserManager (Quản lý User & Phân quyền v10.8)\n- DLNA/UPnP Core (Tích hợp trực tiếp trong Core)] as Core1 #BEE3F8
+        
+        component [Plugin System (v10.8)\n- Plugin cơ bản (OpenSubtitles, Fanart...)] as Plugin1 #CBD5E0
+        
+        database [SQLite Database v10.8\n(jellyfin.db - Schema v10.8)] as DB1 #63B3ED
+
+        API1 --> Core1 : Điều phối nghiệp vụ
+        Core1 --> Plugin1 : Kích hoạt plugin
+        Core1 --> DB1 : Đọc / Ghi CSDL
+    }
+
+    ' --- INSTANCE 2: TARGET V10.9 (BÊN PHẢI) ---
+    package "Jellyfin Instance 2 (Target: v10.9.11)\n[Port: 8097]" as Instance2 #FEFCBF {
+        component [REST API Layer (Jellyfin.Api v10.9)\n- 355+ Endpoints (OpenAPI 3.0)\n- Định danh Header: X-Emby-Token] as API2 #F6E05E
+        
+        component [Core Business Services (Emby.Server.Implementations)\n- LibraryManager, PlaybackManager, SessionManager\n- UserManager (Tái cấu trúc bảo mật - Security Refactor)\n- Lyrics Subsystem & Trickplay Subsystem mới] as Core2 #FAF089
+        
+        component [Plugin System (v10.9)\n- DLNA Plugin (Đã tách thành Plugin độc lập)\n- Plugin cơ bản tương thích v10.9] as Plugin2 #CBD5E0
+        
+        database [SQLite Database v10.9\n(jellyfin.db - Schema v10.9)] as DB2 #ECC94B
+
+        API2 --> Core2 : Điều phối nghiệp vụ
+        Core2 --> Plugin2 : Kích hoạt plugin
+        Core2 --> DB2 : Đọc / Ghi CSDL
+    }
+
+    ' Đảm bảo Instance 1 nằm bên trái, Instance 2 nằm bên phải
+    Instance1 -[hidden]right- Instance2
+
+    ' Kho Media dùng chung cho cả 2 bản
+    storage [Shared Mock Media Storage Volume\n(/media/movies, /media/music - Mount chế độ Read-Only)] as MediaStorage #E2E8F0
+    Core1 ..> MediaStorage : Đọc file media
+    Core2 ..> MediaStorage : Đọc file media
+}
+
+' ============================================================================
+' TẦNG 3: BỘ PHÂN TÍCH & ĐỐI SÁNH VI SAI (DIFFERENTIAL ENGINE - DƯỚI CÙNG)
+' ============================================================================
+package "Tầng Đối Sánh Vi Sai & Đánh Giá (Differential Engine Layer)" #EDF2F7 {
+    
+    component [Configuration & Masking Rules\n(config/ignore-rules.json)] as Config #CBD5E0
+
+    component [Response Normalizer\n(Bộ lọc nhiễu động: Timestamps, ServerId, Tokens)] as Normalizer #D6BCFA
+    
+    component [Differential Comparator\n- So sánh HTTP Status Code\n- So sánh Headers & Schema Drift\n- Deep Semantic JSON Body Diff] as Comparator #FED7D7
+    
+    component [DB State Inspector\n(Đối soát ngầm trạng thái bảng SQLite)] as DBInspector #E9D8FD
+    
+    component [Evidence & Defect Logger\n- Báo cáo api-diff-report.json\n- Lệnh cURL tái hiện lỗi\n- Trích xuất RCA trỏ đến Code C#] as Reporter #C6F6D5
+
+    Config -right-> Normalizer : Nạp quy tắc Masking
+    Normalizer -down-> Comparator : Dữ liệu đã làm sạch nhiễu
+    Comparator -down-> Reporter : Ghi nhận sai khác API
+    DBInspector -down-> Reporter : Ghi nhận sai khác CSDL
+}
+
+' ============================================================================
+' 3 ĐIỂM LIÊN KẾT & LUỒNG TƯƠNG TÁC VI SAI (DIFF-LEVEL DATA FLOW)
+' ============================================================================
+
+' [Diem lien ket 1]: Tham chieu OpenAPI Specification de sinh du lieu test
+API1 ..> InputGen : [Diem 1] Tham chieu OpenAPI v10.8 Spec
+API2 ..> InputGen : [Diem 1] Tham chieu OpenAPI v10.9 Spec
+
+' [Diem lien ket 2]: Dispatcher ban Request R dong nhat xuong 2 API Controllers
+Dispatcher ==> API1 : [Diem 2] Request R (Port 8096)
+Dispatcher ==> API2 : [Diem 2] Request R (Port 8097)
+
+' Thu thap phan hoi tho dua vao Normalizer
+API1 --> Normalizer : Raw Response 1 (v10.8)
+API2 --> Normalizer : Raw Response 2 (v10.9)
+
+' [Diem lien ket 3]: DB State Inspector doi soat snapshot CSDL ngam
+DB1 ..> DBInspector : [Diem 3] SQLite Snapshot v10.8
+DB2 ..> DBInspector : [Diem 3] SQLite Snapshot v10.9
+
+@enduml
