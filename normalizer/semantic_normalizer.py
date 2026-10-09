@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+import copy
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -159,3 +161,74 @@ class SemanticNormalizer:
     @property
     def rule_count(self) -> int:
         return len(self._rules)
+
+    def normalize(
+        self,
+        payload: Any,
+        state_mapping: Mapping[Any, Any] | None = None,
+    ) -> Any:
+        root = copy.deepcopy(payload)
+        for rule in self._rules:
+            self._apply_rule(root, rule, 0, state_mapping)
+        return root
+
+    def _apply_rule(
+        self,
+        node: Any,
+        rule: CompiledRule,
+        token_idx: int,
+        state_mapping: Mapping[Any, Any] | None,
+    ) -> None:
+        tokens = rule.tokens
+        token = tokens[token_idx]
+        is_leaf = token_idx == len(tokens) - 1
+
+        if isinstance(token, FieldToken):
+            if not isinstance(node, dict) or token.name not in node:
+                return
+            if is_leaf:
+                if rule.action == "DROP":
+                    del node[token.name]
+                else:
+                    changed, new_val = self._apply_action(
+                        rule, node[token.name], state_mapping
+                    )
+                    if changed:
+                        node[token.name] = new_val
+            else:
+                self._apply_rule(node[token.name], rule, token_idx + 1, state_mapping)
+        elif isinstance(token, WildcardToken):
+            if not isinstance(node, list):
+                return
+            if is_leaf:
+                if rule.action == "DROP":
+                    for i in range(len(node)):
+                        node[i] = None
+                else:
+                    for i in range(len(node)):
+                        changed, new_val = self._apply_action(
+                            rule, node[i], state_mapping
+                        )
+                        if changed:
+                            node[i] = new_val
+            else:
+                for item in node:
+                    self._apply_rule(item, rule, token_idx + 1, state_mapping)
+
+    @staticmethod
+    def _apply_action(
+        rule: CompiledRule,
+        val: Any,
+        state_mapping: Mapping[Any, Any] | None,
+    ) -> tuple[bool, Any]:
+        if rule.action == "REGEX_REPLACE":
+            if isinstance(val, str) and rule.pattern is not None and rule.replacement is not None:
+                return True, rule.pattern.sub(rule.replacement, val)
+        elif rule.action == "MAP_STATE":
+            if state_mapping is not None:
+                try:
+                    if val in state_mapping:
+                        return True, state_mapping[val]
+                except TypeError:
+                    pass
+        return False, val

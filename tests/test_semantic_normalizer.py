@@ -101,3 +101,248 @@ def test_wraps_missing_file(tmp_path):
         SemanticNormalizer.from_file(config_file)
     assert str(config_file) in str(exc_info.value)
 
+
+def test_drop_removes_root_and_nested_dictionary_fields(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.AccessToken", "action": "DROP"},
+        {"path": "$.User.Id", "action": "DROP"},
+    ])
+    payload = {
+        "AccessToken": "secret",
+        "Keep": 123,
+        "User": {"Id": "user-1", "Name": "Alice"},
+    }
+    result = normalizer.normalize(payload)
+    assert result == {
+        "Keep": 123,
+        "User": {"Name": "Alice"},
+    }
+
+
+def test_drop_through_wildcard_applies_to_every_dictionary(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Users[*].Id", "action": "DROP"},
+    ])
+    payload = {
+        "Users": [
+            {"Id": "a", "Name": "A"},
+            {"Id": "b"},
+        ]
+    }
+    result = normalizer.normalize(payload)
+    assert result == {
+        "Users": [
+            {"Name": "A"},
+            {},
+        ]
+    }
+
+
+def test_drop_direct_list_elements_replaces_them_with_none(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Values[*]", "action": "DROP"},
+    ])
+    payload = {"Values": [1, 2]}
+    result = normalizer.normalize(payload)
+    assert result == {"Values": [None, None]}
+
+
+def test_normalize_does_not_mutate_input(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.AccessToken", "action": "DROP"},
+    ])
+    payload = {"AccessToken": "secret", "Data": {"nested": "value"}}
+    result = normalizer.normalize(payload)
+    assert payload["AccessToken"] == "secret"
+    assert result is not payload
+    assert result["Data"] is not payload["Data"]
+
+
+def test_empty_rules_return_equal_distinct_deep_copy(tmp_path):
+    normalizer = load_rules(tmp_path, [])
+    payload = {"key": "value", "list": [1, 2, {"inner": "data"}]}
+    result = normalizer.normalize(payload)
+    assert result == payload
+    assert result is not payload
+    assert result["list"] is not payload["list"]
+    assert result["list"][2] is not payload["list"][2]
+
+
+def test_regex_replace_replaces_matching_substrings(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {
+            "path": "$.MediaSources[*].TranscodingUrl",
+            "action": "REGEX_REPLACE",
+            "pattern": "(?<=SessionId=)[a-zA-Z0-9]+",
+            "replacement": "<MASKED_SESSION>",
+        }
+    ])
+    payload = {
+        "MediaSources": [
+            {"TranscodingUrl": "http://stream?SessionId=abc12345&codec=h264"},
+            {"TranscodingUrl": "http://stream?SessionId=xyz98765&codec=aac"},
+            {"OtherField": "no-url"},
+        ]
+    }
+    result = normalizer.normalize(payload)
+    assert result == {
+        "MediaSources": [
+            {"TranscodingUrl": "http://stream?SessionId=<MASKED_SESSION>&codec=h264"},
+            {"TranscodingUrl": "http://stream?SessionId=<MASKED_SESSION>&codec=aac"},
+            {"OtherField": "no-url"},
+        ]
+    }
+
+
+def test_regex_replace_non_string_leaves_remain_unchanged(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {
+            "path": "$.Count",
+            "action": "REGEX_REPLACE",
+            "pattern": r"\d+",
+            "replacement": "NUM",
+        },
+        {
+            "path": "$.Details",
+            "action": "REGEX_REPLACE",
+            "pattern": "foo",
+            "replacement": "bar",
+        },
+    ])
+    payload = {"Count": 12345, "Details": None}
+    result = normalizer.normalize(payload)
+    assert result == {"Count": 12345, "Details": None}
+
+
+def test_wildcard_mixed_element_types_only_affects_compatible_branches(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {
+            "path": "$.Items[*].Name",
+            "action": "REGEX_REPLACE",
+            "pattern": "^test-",
+            "replacement": "item-",
+        }
+    ])
+    payload = {
+        "Items": [
+            {"Name": "test-movie"},
+            "a scalar item",
+            [1, 2, 3],
+            {"Name": 999},
+            {"Other": "value"},
+            {"Name": "test-show"},
+        ]
+    }
+    result = normalizer.normalize(payload)
+    assert result == {
+        "Items": [
+            {"Name": "item-movie"},
+            "a scalar item",
+            [1, 2, 3],
+            {"Name": 999},
+            {"Other": "value"},
+            {"Name": "item-show"},
+        ]
+    }
+
+
+def test_missing_path_leaves_payload_unchanged(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Nonexistent.Field", "action": "DROP"},
+        {"path": "$.Missing[*].Child", "action": "DROP"},
+    ])
+    payload = {"Existing": "data"}
+    result = normalizer.normalize(payload)
+    assert result == {"Existing": "data"}
+
+
+def test_incompatible_container_type_mismatch_leaves_payload_unchanged(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Field.Nested", "action": "DROP"},
+        {"path": "$.Items[*].Name", "action": "DROP"},
+    ])
+    payload = {
+        "Field": ["not", "a", "dict"],
+        "Items": {"not": "a list"},
+    }
+    result = normalizer.normalize(payload)
+    assert result == {
+        "Field": ["not", "a", "dict"],
+        "Items": {"not": "a list"},
+    }
+
+
+def test_map_state_converges_version_ids_to_one_canonical_id(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Id", "action": "MAP_STATE"},
+        {"path": "$.User.Id", "action": "MAP_STATE"},
+    ])
+    state_mapping = {
+        "v108-id": "user:admin",
+        "v109-id": "user:admin",
+        42: "item:42",
+    }
+    payload_v108 = {"Id": "v108-id", "User": {"Id": "v108-id"}}
+    payload_v109 = {"Id": "v109-id", "User": {"Id": "v109-id"}}
+
+    res_108 = normalizer.normalize(payload_v108, state_mapping=state_mapping)
+    res_109 = normalizer.normalize(payload_v109, state_mapping=state_mapping)
+
+    assert res_108 == {"Id": "user:admin", "User": {"Id": "user:admin"}}
+    assert res_109 == {"Id": "user:admin", "User": {"Id": "user:admin"}}
+    assert res_108 == res_109
+
+
+def test_map_state_preserves_missing_and_unhashable_values(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.UnmappedId", "action": "MAP_STATE"},
+        {"path": "$.DictLeaf", "action": "MAP_STATE"},
+        {"path": "$.ListLeaf", "action": "MAP_STATE"},
+    ])
+    state_mapping = {"v108-id": "user:admin"}
+    payload = {
+        "UnmappedId": "unknown-uuid",
+        "DictLeaf": {"nested": 1},
+        "ListLeaf": [1, 2, 3],
+    }
+    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    assert result == {
+        "UnmappedId": "unknown-uuid",
+        "DictLeaf": {"nested": 1},
+        "ListLeaf": [1, 2, 3],
+    }
+
+
+def test_map_state_supports_known_hashable_non_string_values(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.ItemId", "action": "MAP_STATE"},
+    ])
+    state_mapping = {42: "item:42"}
+    payload = {"ItemId": 42}
+    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    assert result == {"ItemId": "item:42"}
+
+
+def test_rules_apply_in_file_order(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {
+            "path": "$.Token",
+            "action": "REGEX_REPLACE",
+            "pattern": "^foo",
+            "replacement": "bar",
+        },
+        {"path": "$.Token", "action": "DROP"},
+    ])
+    payload = {"Token": "foosecret"}
+    result = normalizer.normalize(payload)
+    assert "Token" not in result
+
+
+def test_scalar_payload_is_deep_copied_without_change(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Id", "action": "DROP"},
+    ])
+    assert normalizer.normalize(123) == 123
+    assert normalizer.normalize("text") == "text"
+    assert normalizer.normalize(True) is True
+    assert normalizer.normalize(None) is None
