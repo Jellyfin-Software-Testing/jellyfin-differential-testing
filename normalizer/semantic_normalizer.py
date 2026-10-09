@@ -140,7 +140,7 @@ class SemanticNormalizer:
 
                 replacement = rule["replacement"]
                 try:
-                    re._compile_template(pattern, replacement)
+                    pattern.sub(replacement, "")
                 except re.error as exc:
                     raise NormalizerConfigError(
                         f"Invalid normalizer rule {idx} ({path_val}): invalid replacement '{replacement}': {exc}"

@@ -40,6 +40,7 @@ def test_accepts_supported_field_and_wildcard_paths(tmp_path):
     ({"rules": {}}, "'rules' must be a list"),
     ({"rules": ["bad"]}, "rule 0"),
     ({"rules": [{"action": "DROP"}]}, "rule 0"),
+    ({"rules": [{"path": "$.Id"}]}, "missing 'action'"),
     ({"rules": [{"path": "Items[*].Id", "action": "DROP"}]}, "Items[*].Id"),
     ({"rules": [{"path": "$.Items[0].Id", "action": "DROP"}]}, "$.Items[0].Id"),
     ({"rules": [{"path": "$.Id", "action": "MASK"}]}, "MASK"),
@@ -346,3 +347,27 @@ def test_scalar_payload_is_deep_copied_without_change(tmp_path):
     assert normalizer.normalize("text") == "text"
     assert normalizer.normalize(True) is True
     assert normalizer.normalize(None) is None
+
+
+def test_leaf_wildcard_regex_replace(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {
+            "path": "$.Tags[*]",
+            "action": "REGEX_REPLACE",
+            "pattern": "^v1-",
+            "replacement": "tag-",
+        }
+    ])
+    payload = {"Tags": ["v1-action", "v1-drama", 123, "comedy"]}
+    result = normalizer.normalize(payload)
+    assert result == {"Tags": ["tag-action", "tag-drama", 123, "comedy"]}
+
+
+def test_leaf_wildcard_map_state(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.ItemIds[*]", "action": "MAP_STATE"}
+    ])
+    state_mapping = {1: "canonical-1", "uuid-2": "canonical-2"}
+    payload = {"ItemIds": [1, "uuid-2", 3, ["unhashable"]]}
+    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    assert result == {"ItemIds": ["canonical-1", "canonical-2", 3, ["unhashable"]]}
