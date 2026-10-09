@@ -1,52 +1,831 @@
 {
-  "_comment": [
-    "========================================================================",
-    "BỘ LỌC NHIỄU ĐỘNG (MASKING & IGNORING RULES) CHO RESPONSE NORMALIZER",
-    "========================================================================",
-    "Chức năng tổng thể: Hướng dẫn Normalizer cách làm sạch/chuẩn hóa JSON ",
-    "trước khi đưa vào Differential Comparator để tránh báo lỗi giả (False Positives).",
-    "",
-    "Tóm tắt chức năng các loại Action:",
-    "- DROP          : Xóa hoàn toàn key/value khỏi JSON để bỏ qua so sánh ",
-    "                  (dành cho Token, Timestamp ngẫu nhiên).",
-    "- REGEX_REPLACE : Tìm và thay thế chuỗi con bằng regex để che (mask) các ",
-    "                  giá trị động trong một cấu trúc cố định (vd: URL stream).",
-    "- MAP_STATE     : Đối chiếu và quy đổi ID (Primary Key) giữa 2 Database ",
-    "                  nhờ bảng ánh xạ sinh ra từ bước Seed Data.",
-    "========================================================================"
-  ],
-  "rules": [
+  "_metadata": {
+    "generated_by": "scripts/g2_02_mine_dynamic_fields.py",
+    "task": "G2-02",
+    "generated_at": "2026-10-08T15:29:07.077667+00:00",
+    "policy": "Strict masking over ignoring. Zero-suppression of version defects."
+  },
+  "mask_rules": [
     {
       "path": "$.AccessToken",
-      "action": "DROP",
-      "description": "Bỏ qua token xác thực sinh ra ngẫu nhiên mỗi lần login"
+      "endpoint": "POST /Users/AuthenticateByName",
+      "replacement": "<SESSION_TOKEN>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
     },
     {
-      "path": "$.SessionId",
-      "action": "DROP",
-      "description": "Bỏ qua ID phiên làm việc sinh ra ngẫu nhiên"
+      "path": "$.SessionInfo.LastActivityDate",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "replacement": "<SESSION_ID>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    },
+    {
+      "path": "$.User.LastActivityDate",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "replacement": "<TIMESTAMP>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    },
+    {
+      "path": "$.User.LastLoginDate",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "replacement": "<TIMESTAMP>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].TranscodingUrl",
+      "endpoint": "GET /Items",
+      "replacement": "<STREAM_URL>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    },
+    {
+      "path": "$.Items[*].Date",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "replacement": "<TIMESTAMP>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    },
+    {
+      "path": "$.Items[*].Id",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "replacement": "<UUID>",
+      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+    }
+  ],
+  "format_normalization_rules": [
+    {
+      "path": "$.LastActivityDate",
+      "endpoint": "GET /Users/Me",
+      "strategy": "truncate_subseconds_to_3_digits",
+      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+    },
+    {
+      "path": "$.LastLoginDate",
+      "endpoint": "GET /Users/Me",
+      "strategy": "truncate_subseconds_to_3_digits",
+      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+    },
+    {
+      "path": "$[*].LastActivityDate",
+      "endpoint": "GET /Sessions",
+      "strategy": "truncate_subseconds_to_3_digits",
+      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+    },
+    {
+      "path": "$.Items[*].DateCreated",
+      "endpoint": "GET /Items",
+      "strategy": "truncate_subseconds_to_3_digits",
+      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+    }
+  ],
+  "ignore_rules": [],
+  "known_differences": [
+    {
+      "path": "$.Id",
+      "endpoint": "GET /System/Info/Public",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.LocalAddress",
+      "endpoint": "GET /System/Info/Public",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('http://localhost:8096' vs 'http://localhost:8097'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.OperatingSystem",
+      "endpoint": "GET /System/Info/Public",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('Linux' vs ''). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.Version",
+      "endpoint": "GET /System/Info/Public",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('10.8.13' vs '10.9.0'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.CanSelfRestart",
+      "endpoint": "GET /System/Info",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('False' vs 'True'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.CastReceiverApplications[*].Id",
+      "endpoint": "GET /System/Info",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.CastReceiverApplications[*].Name",
+      "endpoint": "GET /System/Info",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.EncoderLocation",
+      "endpoint": "GET /System/Info",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('NotFound' vs 'System'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.OperatingSystemDisplayName",
+      "endpoint": "GET /System/Info",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('Linux' vs ''). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.TranscodingTempPath",
+      "endpoint": "GET /System/Info",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('/config/transcodes' vs '/cache/transcodes'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
     },
     {
       "path": "$.ServerId",
-      "action": "DROP",
-      "description": "Bỏ qua ID hệ thống của server (khác nhau giữa 2 container)"
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
     },
     {
-      "path": "$.MediaSources[*].TranscodingUrl",
-      "action": "REGEX_REPLACE",
-      "pattern": "(?<=SessionId=)[a-zA-Z0-9]+",
-      "replacement": "<MASKED_SESSION>",
-      "description": "Che đoạn SessionId ngẫu nhiên trong URL stream, nhưng vẫn giữ nguyên phần còn lại để so sánh cấu trúc codec/format"
+      "path": "$.SessionInfo.PlayState.PlaybackOrder",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
     },
     {
-      "path": "$.Id",
-      "action": "MAP_STATE",
-      "description": "Ánh xạ (Map) ID của các Media Item giữa DB v10.8 và v10.9 để nhận diện chúng là một"
+      "path": "$.SessionInfo.ServerId",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.SessionInfo.UserId",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs '9898b8f141c14688bef464ad58b12c4c'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.User.Configuration.CastReceiverId",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
     },
     {
       "path": "$.User.Id",
-      "action": "MAP_STATE",
-      "description": "Ánh xạ ID của User giữa 2 phiên bản"
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs '9898b8f141c14688bef464ad58b12c4c'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.User.Policy.EnableCollectionManagement",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.User.Policy.EnableLyricManagement",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.User.Policy.EnableSubtitleManagement",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.User.ServerId",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.Configuration.DisplayCollectionsView",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.DisplayMissingEpisodes",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.EnableLocalPassword",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.EnableNextEpisodeAutoPlay",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.HidePlayedInLatest",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.PlayDefaultAudioTrack",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.RememberAudioSelections",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.RememberSubtitleSelections",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.SubtitleLanguagePreference",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Configuration.SubtitleMode",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.EnableAutoLogin",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.HasConfiguredEasyPassword",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.HasConfiguredPassword",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.HasPassword",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.AuthenticationProviderId",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableAllChannels",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableAllDevices",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableAudioPlaybackTranscoding",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableContentDeletion",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableContentDownloading",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableLiveTvAccess",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableLiveTvManagement",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableMediaConversion",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableMediaPlayback",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnablePlaybackRemuxing",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnablePublicSharing",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableRemoteAccess",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableRemoteControlOfOtherUsers",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableSharedDeviceControl",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableSyncTranscoding",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableUserPreferenceAccess",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.EnableVideoPlaybackTranscoding",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.ForceRemoteSourceTranscoding",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.InvalidLoginAttemptCount",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.IsDisabled",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.IsHidden",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.LoginAttemptsBeforeLockout",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.MaxActiveSessions",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.PasswordResetProviderId",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.RemoteClientBitrateLimit",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Policy.SyncPlayAccess",
+      "endpoint": "GET /Users/Me",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].ApplicationVersion",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].Capabilities.SupportsContentUploading",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].Capabilities.SupportsMediaControl",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].Capabilities.SupportsPersistentIdentifier",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].Capabilities.SupportsSync",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].DeviceId",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].DeviceName",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].HasCustomDeviceName",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].Id",
+      "endpoint": "GET /Sessions",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('f1fc2f4bffb63b0208af0d12a38091bd' vs 'sess_active_v1090'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$[*].IsActive",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LastPlaybackCheckIn",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].NowViewingItem",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].PlayState.CanSeek",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].PlayState.IsMuted",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].PlayState.IsPaused",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].PlayState.RepeatMode",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].RemoteEndPoint",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].ServerId",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].SupportsMediaControl",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].SupportsRemoteControl",
+      "endpoint": "GET /Sessions",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].UserId",
+      "endpoint": "GET /Sessions",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs 'a1b2c3d4e5f60718293a4b5c6d7e8f90'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$[*].ItemId",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('f1e6ccc7f6be0b0c9b427a422e1bacd0' vs 'lib_music_01'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$[*].LibraryOptions.AllowEmbeddedSubtitles",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.AutomaticRefreshIntervalDays",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.AutomaticallyAddToCollection",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.EnableAutomaticSeriesGrouping",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.EnableChapterImageExtraction",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.EnableEmbeddedEpisodeInfos",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.EnableEmbeddedTitles",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.EnableInternetProviders",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.ExtractChapterImagesDuringLibraryScan",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.PathInfos[*].Path",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.RequirePerfectSubtitleMatch",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.SaveLocalMetadata",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.SaveSubtitlesWithMedia",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.SeasonZeroDisplayName",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.SkipSubtitlesIfAudioTrackMatches",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].LibraryOptions.SkipSubtitlesIfEmbeddedSubtitlesPresent",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$[*].RefreshStatus",
+      "endpoint": "GET /Library/VirtualFolders",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].ChannelId",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].Id",
+      "endpoint": "GET /Items",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('b730f9fd841b9789262f9b84d119e58e' vs 'item_comp_tone_02'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.Items[*].IsFolder",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].LocationType",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Bitrate",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Container",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].ETag",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].GenPtsInput",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Id",
+      "endpoint": "GET /Items",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('b730f9fd841b9789262f9b84d119e58e' vs 'src_ref_tone_01'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].IgnoreDts",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].IgnoreIndex",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].IsInfiniteStream",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].IsRemote",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].BitDepth",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].BitRate",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].Channels",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].Codec",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].DisplayTitle",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].Index",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsDefault",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsExternal",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsForced",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsInterlaced",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsTextSubtitleStream",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].Level",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].SampleRate",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].SupportsExternalStream",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].TimeBase",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].MediaStreams[*].Type",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Name",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Protocol",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].ReadAtNativeFramerate",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].RequiresClosing",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].RequiresLooping",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].RequiresOpening",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].RunTimeTicks",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Size",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].SupportsDirectPlay",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].SupportsDirectStream",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].SupportsProbing",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].SupportsTranscoding",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].MediaSources[*].Type",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].Name",
+      "endpoint": "GET /Items",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('01 - Reference Tone' vs '02 - Comparison Tone'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+    },
+    {
+      "path": "$.Items[*].Path",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].ServerId",
+      "endpoint": "GET /Items",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].ShortOverview",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].Type",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.Items[*].UserId",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.StartIndex",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+    },
+    {
+      "path": "$.TotalRecordCount",
+      "endpoint": "GET /System/ActivityLog/Entries",
+      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('3' vs '1'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
     }
   ]
 }
