@@ -113,7 +113,7 @@ class SemanticNormalizer:
                 )
 
             action = rule["action"]
-            if action not in _SUPPORTED_ACTIONS:
+            if not isinstance(action, str) or action not in _SUPPORTED_ACTIONS:
                 raise NormalizerConfigError(
                     f"Invalid normalizer rule {idx} ({path_val}): unsupported action '{action}'"
                 )

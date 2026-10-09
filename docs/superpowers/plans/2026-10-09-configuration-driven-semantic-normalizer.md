@@ -285,4 +285,3 @@ git add normalizer/ tests/test_semantic_normalizer.py
 git add -f docs/superpowers/specs/2026-10-09-configuration-driven-semantic-normalizer-design.md docs/superpowers/plans/2026-10-09-configuration-driven-semantic-normalizer.md
 git commit -m "[G2-06] Add configuration-driven semantic normalizer"
 ```
-

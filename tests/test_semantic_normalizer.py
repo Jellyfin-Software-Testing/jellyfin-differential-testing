@@ -44,6 +44,10 @@ def test_accepts_supported_field_and_wildcard_paths(tmp_path):
     ({"rules": [{"path": "Items[*].Id", "action": "DROP"}]}, "Items[*].Id"),
     ({"rules": [{"path": "$.Items[0].Id", "action": "DROP"}]}, "$.Items[0].Id"),
     ({"rules": [{"path": "$.Id", "action": "MASK"}]}, "MASK"),
+    ({"rules": [{"path": "$.Id", "action": None}]}, "unsupported action"),
+    ({"rules": [{"path": "$.Id", "action": 123}]}, "unsupported action"),
+    ({"rules": [{"path": "$.Id", "action": []}]}, "unsupported action"),
+    ({"rules": [{"path": "$.Id", "action": {}}]}, "unsupported action"),
     ({"rules": [{"path": "$.Url", "action": "REGEX_REPLACE"}]}, "pattern"),
     ({"rules": [{"path": "$.Url", "action": "REGEX_REPLACE", "pattern": "[", "replacement": "x"}]}, "$.Url"),
 ])
