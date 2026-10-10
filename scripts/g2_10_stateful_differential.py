@@ -16,8 +16,12 @@ from typing import Any
 
 import requests
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from models.user_data_model import FavoriteAction, FavoriteState, UserDataTestModel
-from scripts.g1_06_setup_and_verify import JellyfinClient, ROOT, Server, SetupError
+from scripts.g1_06_setup_and_verify import JellyfinClient, Server, SetupError
 
 
 DEFAULT_REPORT = ROOT / "docs" / "evidence" / "G2-10-stateful-differential.json"
@@ -86,9 +90,14 @@ def find_seed_item(client: JellyfinClient, name: str) -> str:
 
 
 def read_state(client: JellyfinClient, user_id: str, item_id: str) -> tuple[FavoriteState, dict[str, Any], dict[str, Any]]:
-    item = client.json(
-        "GET", f"/Items/{item_id}", authenticate=True, params={"userId": user_id}
-    )
+    if client.server.label.startswith("v10.8"):
+        item = client.json(
+            "GET", f"/Users/{user_id}/Items/{item_id}", authenticate=True
+        )
+    else:
+        item = client.json(
+            "GET", f"/Items/{item_id}", authenticate=True, params={"userId": user_id}
+        )
     collection = client.json(
         "GET",
         "/Items",
