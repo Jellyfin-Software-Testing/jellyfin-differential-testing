@@ -56,6 +56,38 @@ def test_accepts_supported_field_and_wildcard_paths(tmp_path):
     assert normalizer.rule_count == 3
 
 
+@pytest.mark.parametrize("replacement", [None, 123, []])
+def test_mask_string_requires_string_replacement(tmp_path, replacement):
+    rule = {"path": "$.Token", "action": "MASK_STRING"}
+    if replacement is not None:
+        rule["replacement"] = replacement
+    config_file = tmp_path / "mask.json"
+    config_file.write_text(json.dumps({"rules": [dict(rule, endpoint=TEST_ENDPOINT)]}), encoding="utf-8")
+    with pytest.raises(NormalizerConfigError, match="replacement"):
+        SemanticNormalizer.from_file(config_file)
+
+
+def test_mask_string_preserves_schema_and_type_defects(tmp_path):
+    normalizer = load_rules(tmp_path, [{
+        "path": "$.Token", "action": "MASK_STRING", "replacement": "<TOKEN>"
+    }])
+    assert normalizer.normalize({"Token": "secret"}, endpoint=TEST_ENDPOINT) == {"Token": "<TOKEN>"}
+    assert normalizer.normalize({"Token": None}, endpoint=TEST_ENDPOINT) == {"Token": None}
+    assert normalizer.normalize({"Token": 123}, endpoint=TEST_ENDPOINT) == {"Token": 123}
+    assert normalizer.normalize({"Token": {"value": 1}}, endpoint=TEST_ENDPOINT) == {"Token": {"value": 1}}
+    assert normalizer.normalize({}, endpoint=TEST_ENDPOINT) == {}
+
+
+def test_leaf_wildcard_mask_string_only_masks_strings(tmp_path):
+    normalizer = load_rules(tmp_path, [{
+        "path": "$.Values[*]", "action": "MASK_STRING", "replacement": "<MASKED>"
+    }])
+    payload = {"Values": ["a", None, 1, {"x": 1}]}
+    assert normalizer.normalize(payload, endpoint=TEST_ENDPOINT) == {
+        "Values": ["<MASKED>", None, 1, {"x": 1}]
+    }
+
+
 @pytest.mark.parametrize(("document", "message"), [
     ([], "root must be an object"),
     ({}, "missing 'rules' list"),

@@ -153,6 +153,12 @@ class SemanticNormalizer:
                     raise NormalizerConfigError(
                         f"Invalid normalizer rule {idx} ({path_val}): invalid replacement '{replacement}': {exc}"
                     ) from exc
+            elif action == "MASK_STRING":
+                if "replacement" not in rule or not isinstance(rule["replacement"], str):
+                    raise NormalizerConfigError(
+                        f"Invalid normalizer rule {idx} ({path_val}): missing or non-string 'replacement'"
+                    )
+                replacement = rule["replacement"]
 
             compiled_rules.append(
                 CompiledRule(
@@ -235,6 +241,9 @@ class SemanticNormalizer:
         if rule.action == "REGEX_REPLACE":
             if isinstance(val, str) and rule.pattern is not None and rule.replacement is not None:
                 return True, rule.pattern.sub(rule.replacement, val)
+        elif rule.action == "MASK_STRING":
+            if isinstance(val, str) and rule.replacement is not None:
+                return True, rule.replacement
         elif rule.action == "MAP_STATE":
             if state_mapping is not None:
                 try:
