@@ -8,7 +8,8 @@ from typing import Any, Pattern
 
 _PATH_RE = re.compile(r"^\$((\.[^.\[\]]+)|(\[\*\]))+$")
 _SEGMENT_TOKEN_RE = re.compile(r"\.([^.\[\]]+)|\[\*\]")
-_SUPPORTED_ACTIONS = {"DROP", "REGEX_REPLACE", "MAP_STATE"}
+_ENDPOINT_RE = re.compile(r"^[A-Z]+ /\S+$")
+_SUPPORTED_ACTIONS = {"DROP", "MASK_STRING", "REGEX_REPLACE", "MAP_STATE"}
 
 
 class NormalizerConfigError(ValueError):
@@ -30,6 +31,7 @@ Token = FieldToken | WildcardToken
 
 @dataclass(frozen=True)
 class CompiledRule:
+    endpoint: str
     path: str
     tokens: tuple[Token, ...]
     action: str
@@ -118,6 +120,12 @@ class SemanticNormalizer:
                     f"Invalid normalizer rule {idx} ({path_val}): unsupported action '{action}'"
                 )
 
+            endpoint = rule.get("endpoint")
+            if not isinstance(endpoint, str) or not _ENDPOINT_RE.match(endpoint):
+                raise NormalizerConfigError(
+                    f"Invalid normalizer rule {idx} ({path_val}): invalid endpoint '{endpoint}'"
+                )
+
             pattern: Pattern[str] | None = None
             replacement: str | None = None
 
@@ -145,9 +153,16 @@ class SemanticNormalizer:
                     raise NormalizerConfigError(
                         f"Invalid normalizer rule {idx} ({path_val}): invalid replacement '{replacement}': {exc}"
                     ) from exc
+            elif action == "MASK_STRING":
+                if "replacement" not in rule or not isinstance(rule["replacement"], str):
+                    raise NormalizerConfigError(
+                        f"Invalid normalizer rule {idx} ({path_val}): missing or non-string 'replacement'"
+                    )
+                replacement = rule["replacement"]
 
             compiled_rules.append(
                 CompiledRule(
+                    endpoint=endpoint,
                     path=path_val,
                     tokens=tokens,
                     action=action,
@@ -165,11 +180,13 @@ class SemanticNormalizer:
     def normalize(
         self,
         payload: Any,
+        endpoint: str,
         state_mapping: Mapping[Any, Any] | None = None,
     ) -> Any:
         root = copy.deepcopy(payload)
         for rule in self._rules:
-            self._apply_rule(root, rule, 0, state_mapping)
+            if rule.endpoint == endpoint:
+                self._apply_rule(root, rule, 0, state_mapping)
         return root
 
     def _apply_rule(
@@ -224,6 +241,9 @@ class SemanticNormalizer:
         if rule.action == "REGEX_REPLACE":
             if isinstance(val, str) and rule.pattern is not None and rule.replacement is not None:
                 return True, rule.pattern.sub(rule.replacement, val)
+        elif rule.action == "MASK_STRING":
+            if isinstance(val, str) and rule.replacement is not None:
+                return True, rule.replacement
         elif rule.action == "MAP_STATE":
             if state_mapping is not None:
                 try:
