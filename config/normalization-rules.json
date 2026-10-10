@@ -1,0 +1,27 @@
+{
+  "rules": [
+    {
+      "endpoint": "POST /Users/AuthenticateByName",
+      "path": "$.AccessToken",
+      "action": "MASK_STRING",
+      "replacement": "<SESSION_TOKEN>"
+    },
+    {
+      "endpoint": "POST /Users/AuthenticateByName",
+      "path": "$.User.Id",
+      "action": "MAP_STATE"
+    },
+    {
+      "endpoint": "GET /Items",
+      "path": "$.Items[*].Id",
+      "action": "MAP_STATE"
+    },
+    {
+      "endpoint": "GET /Items",
+      "path": "$.Items[*].MediaSources[*].TranscodingUrl",
+      "action": "REGEX_REPLACE",
+      "pattern": "(?<=SessionId=)[a-zA-Z0-9]+",
+      "replacement": "<MASKED_SESSION>"
+    }
+  ]
+}
