@@ -7,17 +7,39 @@ import pytest
 from normalizer import NormalizerConfigError, SemanticNormalizer
 
 ROOT = Path(__file__).resolve().parent.parent
+TEST_ENDPOINT = "GET /Test"
 
 
 def load_rules(tmp_path: Path, rules: list) -> SemanticNormalizer:
+    rules = [dict(rule, endpoint=rule.get("endpoint", TEST_ENDPOINT)) for rule in rules]
     config_file = tmp_path / "rules.json"
     config_file.write_text(json.dumps({"rules": rules}), encoding="utf-8")
     return SemanticNormalizer.from_file(config_file)
 
 
 def test_loads_real_ignore_rules():
-    normalizer = SemanticNormalizer.from_file(ROOT / "config" / "ignore-rules.json")
-    assert normalizer.rule_count == 6
+    normalizer = SemanticNormalizer.from_file(ROOT / "config" / "normalization-rules.json")
+    assert normalizer.rule_count == 4
+
+
+@pytest.mark.parametrize("endpoint", [None, 123, "get /Items", "GET Items", "GET  /Items", "GET /Items with-space"])
+def test_rejects_missing_or_invalid_endpoint(tmp_path, endpoint):
+    rule = {"path": "$.Token", "action": "DROP"}
+    if endpoint is not None:
+        rule["endpoint"] = endpoint
+    config_file = tmp_path / "invalid_endpoint.json"
+    config_file.write_text(json.dumps({"rules": [rule]}), encoding="utf-8")
+    with pytest.raises(NormalizerConfigError, match="endpoint"):
+        SemanticNormalizer.from_file(config_file)
+
+
+def test_only_rules_for_exact_endpoint_are_applied(tmp_path):
+    normalizer = load_rules(tmp_path, [
+        {"path": "$.Token", "action": "DROP", "endpoint": "GET /A"},
+        {"path": "$.Token", "action": "DROP", "endpoint": "GET /B"},
+    ])
+    assert normalizer.normalize({"Token": "x"}, endpoint="GET /A") == {}
+    assert normalizer.normalize({"Token": "x"}, endpoint="GET /C") == {"Token": "x"}
 
 
 def test_accepts_supported_field_and_wildcard_paths(tmp_path):
@@ -52,6 +74,13 @@ def test_accepts_supported_field_and_wildcard_paths(tmp_path):
     ({"rules": [{"path": "$.Url", "action": "REGEX_REPLACE", "pattern": "[", "replacement": "x"}]}, "$.Url"),
 ])
 def test_rejects_invalid_configuration(tmp_path, document, message):
+    if isinstance(document, dict) and isinstance(document.get("rules"), list):
+        document = dict(document)
+        document["rules"] = [
+            dict(rule, endpoint=rule.get("endpoint", TEST_ENDPOINT))
+            if isinstance(rule, dict) else rule
+            for rule in document["rules"]
+        ]
     config_file = tmp_path / "invalid.json"
     config_file.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(NormalizerConfigError, match=re.escape(message)):
@@ -61,6 +90,7 @@ def test_rejects_invalid_configuration(tmp_path, document, message):
 @pytest.mark.parametrize("bad_replacement", [None, 123, []])
 def test_rejects_missing_or_non_string_replacement(tmp_path, bad_replacement):
     rule = {
+        "endpoint": TEST_ENDPOINT,
         "path": "$.Url",
         "action": "REGEX_REPLACE",
         "pattern": "token=[^&]+",
@@ -117,7 +147,7 @@ def test_drop_removes_root_and_nested_dictionary_fields(tmp_path):
         "Keep": 123,
         "User": {"Id": "user-1", "Name": "Alice"},
     }
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {
         "Keep": 123,
         "User": {"Name": "Alice"},
@@ -134,7 +164,7 @@ def test_drop_through_wildcard_applies_to_every_dictionary(tmp_path):
             {"Id": "b"},
         ]
     }
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {
         "Users": [
             {"Name": "A"},
@@ -148,7 +178,7 @@ def test_drop_direct_list_elements_replaces_them_with_none(tmp_path):
         {"path": "$.Values[*]", "action": "DROP"},
     ])
     payload = {"Values": [1, 2]}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {"Values": [None, None]}
 
 
@@ -157,7 +187,7 @@ def test_normalize_does_not_mutate_input(tmp_path):
         {"path": "$.AccessToken", "action": "DROP"},
     ])
     payload = {"AccessToken": "secret", "Data": {"nested": "value"}}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert payload["AccessToken"] == "secret"
     assert result is not payload
     assert result["Data"] is not payload["Data"]
@@ -166,7 +196,7 @@ def test_normalize_does_not_mutate_input(tmp_path):
 def test_empty_rules_return_equal_distinct_deep_copy(tmp_path):
     normalizer = load_rules(tmp_path, [])
     payload = {"key": "value", "list": [1, 2, {"inner": "data"}]}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == payload
     assert result is not payload
     assert result["list"] is not payload["list"]
@@ -189,7 +219,7 @@ def test_regex_replace_replaces_matching_substrings(tmp_path):
             {"OtherField": "no-url"},
         ]
     }
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {
         "MediaSources": [
             {"TranscodingUrl": "http://stream?SessionId=<MASKED_SESSION>&codec=h264"},
@@ -215,7 +245,7 @@ def test_regex_replace_non_string_leaves_remain_unchanged(tmp_path):
         },
     ])
     payload = {"Count": 12345, "Details": None}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {"Count": 12345, "Details": None}
 
 
@@ -238,7 +268,7 @@ def test_wildcard_mixed_element_types_only_affects_compatible_branches(tmp_path)
             {"Name": "test-show"},
         ]
     }
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {
         "Items": [
             {"Name": "item-movie"},
@@ -257,7 +287,7 @@ def test_missing_path_leaves_payload_unchanged(tmp_path):
         {"path": "$.Missing[*].Child", "action": "DROP"},
     ])
     payload = {"Existing": "data"}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {"Existing": "data"}
 
 
@@ -270,7 +300,7 @@ def test_incompatible_container_type_mismatch_leaves_payload_unchanged(tmp_path)
         "Field": ["not", "a", "dict"],
         "Items": {"not": "a list"},
     }
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {
         "Field": ["not", "a", "dict"],
         "Items": {"not": "a list"},
@@ -290,8 +320,8 @@ def test_map_state_converges_version_ids_to_one_canonical_id(tmp_path):
     payload_v108 = {"Id": "v108-id", "User": {"Id": "v108-id"}}
     payload_v109 = {"Id": "v109-id", "User": {"Id": "v109-id"}}
 
-    res_108 = normalizer.normalize(payload_v108, state_mapping=state_mapping)
-    res_109 = normalizer.normalize(payload_v109, state_mapping=state_mapping)
+    res_108 = normalizer.normalize(payload_v108, endpoint=TEST_ENDPOINT, state_mapping=state_mapping)
+    res_109 = normalizer.normalize(payload_v109, endpoint=TEST_ENDPOINT, state_mapping=state_mapping)
 
     assert res_108 == {"Id": "user:admin", "User": {"Id": "user:admin"}}
     assert res_109 == {"Id": "user:admin", "User": {"Id": "user:admin"}}
@@ -310,7 +340,7 @@ def test_map_state_preserves_missing_and_unhashable_values(tmp_path):
         "DictLeaf": {"nested": 1},
         "ListLeaf": [1, 2, 3],
     }
-    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT, state_mapping=state_mapping)
     assert result == {
         "UnmappedId": "unknown-uuid",
         "DictLeaf": {"nested": 1},
@@ -324,7 +354,7 @@ def test_map_state_supports_known_hashable_non_string_values(tmp_path):
     ])
     state_mapping = {42: "item:42"}
     payload = {"ItemId": 42}
-    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT, state_mapping=state_mapping)
     assert result == {"ItemId": "item:42"}
 
 
@@ -339,7 +369,7 @@ def test_rules_apply_in_file_order(tmp_path):
         {"path": "$.Token", "action": "DROP"},
     ])
     payload = {"Token": "foosecret"}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert "Token" not in result
 
 
@@ -347,10 +377,10 @@ def test_scalar_payload_is_deep_copied_without_change(tmp_path):
     normalizer = load_rules(tmp_path, [
         {"path": "$.Id", "action": "DROP"},
     ])
-    assert normalizer.normalize(123) == 123
-    assert normalizer.normalize("text") == "text"
-    assert normalizer.normalize(True) is True
-    assert normalizer.normalize(None) is None
+    assert normalizer.normalize(123, endpoint=TEST_ENDPOINT) == 123
+    assert normalizer.normalize("text", endpoint=TEST_ENDPOINT) == "text"
+    assert normalizer.normalize(True, endpoint=TEST_ENDPOINT) is True
+    assert normalizer.normalize(None, endpoint=TEST_ENDPOINT) is None
 
 
 def test_leaf_wildcard_regex_replace(tmp_path):
@@ -363,7 +393,7 @@ def test_leaf_wildcard_regex_replace(tmp_path):
         }
     ])
     payload = {"Tags": ["v1-action", "v1-drama", 123, "comedy"]}
-    result = normalizer.normalize(payload)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT)
     assert result == {"Tags": ["tag-action", "tag-drama", 123, "comedy"]}
 
 
@@ -373,5 +403,5 @@ def test_leaf_wildcard_map_state(tmp_path):
     ])
     state_mapping = {1: "canonical-1", "uuid-2": "canonical-2"}
     payload = {"ItemIds": [1, "uuid-2", 3, ["unhashable"]]}
-    result = normalizer.normalize(payload, state_mapping=state_mapping)
+    result = normalizer.normalize(payload, endpoint=TEST_ENDPOINT, state_mapping=state_mapping)
     assert result == {"ItemIds": ["canonical-1", "canonical-2", 3, ["unhashable"]]}
