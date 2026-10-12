@@ -4,3 +4,4 @@ requests==2.31.0
 deepdiff==6.7.1
 hypothesis==6.100.0
 pytest-xdist==3.5.0
+toxiproxy-python>=2.1.0
