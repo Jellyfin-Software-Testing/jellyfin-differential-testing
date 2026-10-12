@@ -13,7 +13,7 @@ services:
     volumes:
       - ./v10.8/config:/config
       - ./v10.8/cache:/cache
-      # Cả hai phiên bản phải đọc đúng một seed dataset bất biến.
+      - ../reports/coverage:/coverage
       - ../data/seed-data:/media:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
@@ -34,6 +34,7 @@ services:
       - LANG=en_US.UTF-8
       - JELLYFIN_PublishedServerUrl=http://localhost:8097
     volumes:
+      - ../reports/coverage:/coverage
       - ./v10.9/config:/config
       - ./v10.9/cache:/cache
       - ../data/seed-data:/media:ro
