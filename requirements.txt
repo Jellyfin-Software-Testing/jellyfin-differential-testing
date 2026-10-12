@@ -1,6 +1,12 @@
+# Testing Framework & Runner
 pytest==8.1.1
 pytest-html==4.1.1
+pytest-xdist==3.5.0
+
+# HTTP & API Testing Tools
 requests==2.31.0
 deepdiff==6.7.1
 hypothesis==6.100.0
-pytest-xdist==3.5.0
+
+# Network Resilience / Fault Injection
+toxiproxy-python>=2.1.0

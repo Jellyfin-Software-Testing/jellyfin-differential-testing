@@ -72,3 +72,14 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     restart: unless-stopped
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    container_name: toxiproxy
+    ports:
+      - "8474:8474" 
+      - "8601:8601" 
+      - "8602:8602"
+    depends_on:
+      - jellyfin-v108
+      - jellyfin-v109
