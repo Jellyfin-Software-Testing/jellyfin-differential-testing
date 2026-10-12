@@ -52,11 +52,17 @@ class SemanticDiffEngine:
             ))
 
         # 2. Compare Headers
-        ignore = [h.lower() for h in (ignore_headers or ["date", "server", "transfer-encoding"])]
+        default_ignored = ["date", "server", "transfer-encoding"]
+        ignore = {h.lower() for h in (
+            default_ignored if ignore_headers is None else ignore_headers
+        )}
+        v2_by_name = {name.lower(): value for name, value in v2_headers.items()}
+        v1_names = {name.lower() for name in v1_headers}
         for k, v in v1_headers.items():
-            if k.lower() in ignore:
+            normalized_name = k.lower()
+            if normalized_name in ignore:
                 continue
-            if k not in v2_headers:
+            if normalized_name not in v2_by_name:
                 diffs.append(DiffItem(
                     DiffCategory.HEADER,
                     f"headers.{k}",
@@ -64,14 +70,24 @@ class SemanticDiffEngine:
                     None,
                     f"Header '{k}' missing in v2"
                 ))
-            elif v2_headers[k] != v:
+            elif v2_by_name[normalized_name] != v:
                 diffs.append(DiffItem(
                     DiffCategory.HEADER,
                     f"headers.{k}",
                     v,
-                    v2_headers[k],
+                    v2_by_name[normalized_name],
                     f"Header '{k}' value mismatch"
                 ))
+        for k, v in v2_headers.items():
+            if k.lower() in ignore or k.lower() in v1_names:
+                continue
+            diffs.append(DiffItem(
+                DiffCategory.HEADER,
+                f"headers.{k}",
+                None,
+                v,
+                f"Header '{k}' added in v2"
+            ))
 
         # 3. Compare Body recursively
         self._compare_body("$", v1_body, v2_body, diffs)
