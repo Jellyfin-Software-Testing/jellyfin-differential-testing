@@ -21,7 +21,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from models.user_data_model import FavoriteAction, FavoriteState, UserDataTestModel
-from scripts.g1_06_setup_and_verify import JellyfinClient, Server, SetupError
+from scripts.G1_06_setup_and_verify import JellyfinClient, Server, SetupError
 
 
 DEFAULT_REPORT = ROOT / "docs" / "evidence" / "G2-10-stateful-differential.json"
