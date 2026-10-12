@@ -58,6 +58,7 @@ class SemanticDiffEngine:
         )}
         v2_by_name = {name.lower(): value for name, value in v2_headers.items()}
         v1_names = {name.lower() for name in v1_headers}
+        
         for k, v in v1_headers.items():
             normalized_name = k.lower()
             if normalized_name in ignore:
@@ -78,6 +79,7 @@ class SemanticDiffEngine:
                     v2_by_name[normalized_name],
                     f"Header '{k}' value mismatch"
                 ))
+                
         for k, v in v2_headers.items():
             if k.lower() in ignore or k.lower() in v1_names:
                 continue
