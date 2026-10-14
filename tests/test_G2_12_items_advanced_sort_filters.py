@@ -1,0 +1,146 @@
+import importlib.util
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+RUNNER = ROOT / "scripts" / "G2_12_items_advanced_sort_filters.py"
+
+
+def load_runner_module():
+    spec = importlib.util.spec_from_file_location("g2_12_runner", RUNNER)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_semantic_keys_extracts_name_and_type():
+    runner = load_runner_module()
+    items = [
+        {"Name": "Song A", "Type": "Audio", "SortName": "Song A"},
+        {"Name": "Song B", "Type": "Audio", "SortName": "Song B"},
+    ]
+    assert runner.semantic_keys(items, "v10.8.13") == [("Song A", "Audio"), ("Song B", "Audio")]
+
+
+def test_semantic_keys_raises_setup_error_on_missing_field():
+    runner = load_runner_module()
+    bad_items = [
+        {"Name": "Song A", "SortName": "Song A"},  # missing Type
+    ]
+    with pytest.raises(runner.SetupError, match="v10.8.13.*missing.*Type"):
+        runner.semantic_keys(bad_items, "v10.8.13")
+
+
+def test_verify_server_results_success_ascending():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    item_b = {"Name": "Song B", "Type": "Audio", "SortName": "B"}
+    baseline = {"Items": [item_a, item_b], "StartIndex": 0, "TotalRecordCount": 2}
+    pages = {
+        0: {"Items": [item_a], "StartIndex": 0, "TotalRecordCount": 2},
+        1: {"Items": [item_b], "StartIndex": 1, "TotalRecordCount": 2},
+    }
+    keys = runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+    assert keys == [("Song A", "Audio"), ("Song B", "Audio")]
+
+
+def test_verify_server_results_success_descending():
+    runner = load_runner_module()
+    item_b = {"Name": "Song B", "Type": "Audio", "SortName": "B"}
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    baseline = {"Items": [item_b, item_a], "StartIndex": 0, "TotalRecordCount": 2}
+    pages = {
+        0: {"Items": [item_b], "StartIndex": 0, "TotalRecordCount": 2},
+        1: {"Items": [item_a], "StartIndex": 1, "TotalRecordCount": 2},
+    }
+    keys = runner.verify_server_results("v10.8.13", "Descending", baseline, pages, limit=1)
+    assert keys == [("Song B", "Audio"), ("Song A", "Audio")]
+
+
+def test_verify_server_results_rejects_incomplete_baseline():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    # len(Items) != TotalRecordCount
+    baseline = {"Items": [item_a], "StartIndex": 0, "TotalRecordCount": 2}
+    pages = {0: {"Items": [item_a], "StartIndex": 0, "TotalRecordCount": 2}}
+    with pytest.raises(runner.SetupError, match="baseline length"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+
+    # StartIndex != 0
+    baseline2 = {"Items": [item_a], "StartIndex": 1, "TotalRecordCount": 1}
+    with pytest.raises(runner.SetupError, match="baseline StartIndex"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline2, pages, limit=1)
+
+
+def test_verify_server_results_rejects_wrong_order():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    item_b = {"Name": "Song B", "Type": "Audio", "SortName": "B"}
+    # Expected Ascending, but given B then A
+    baseline = {"Items": [item_b, item_a], "StartIndex": 0, "TotalRecordCount": 2}
+    pages = {
+        0: {"Items": [item_b], "StartIndex": 0, "TotalRecordCount": 2},
+        1: {"Items": [item_a], "StartIndex": 1, "TotalRecordCount": 2},
+    }
+    with pytest.raises(runner.SetupError, match="not in Ascending order"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+
+
+def test_verify_server_results_rejects_page_count_mismatch_with_baseline():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    baseline = {"Items": [item_a], "StartIndex": 0, "TotalRecordCount": 1}
+    pages = {0: {"Items": [item_a], "StartIndex": 0, "TotalRecordCount": 99}}
+    with pytest.raises(runner.SetupError, match="TotalRecordCount mismatch"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+
+
+def test_verify_server_results_rejects_page_slice_mismatch():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    item_b = {"Name": "Song B", "Type": "Audio", "SortName": "B"}
+    baseline = {"Items": [item_a, item_b], "StartIndex": 0, "TotalRecordCount": 2}
+    # Page 0 returns item_b instead of item_a
+    pages = {
+        0: {"Items": [item_b], "StartIndex": 0, "TotalRecordCount": 2},
+        1: {"Items": [item_b], "StartIndex": 1, "TotalRecordCount": 2},
+    }
+    with pytest.raises(runner.SetupError, match="slice mismatch"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+
+
+def test_verify_server_results_rejects_page_exceeding_limit():
+    runner = load_runner_module()
+    item_a = {"Name": "Song A", "Type": "Audio", "SortName": "A"}
+    item_b = {"Name": "Song B", "Type": "Audio", "SortName": "B"}
+    baseline = {"Items": [item_a, item_b], "StartIndex": 0, "TotalRecordCount": 2}
+    pages = {
+        0: {"Items": [item_a, item_b], "StartIndex": 0, "TotalRecordCount": 2},
+    }
+    with pytest.raises(runner.SetupError, match="exceeds limit"):
+        runner.verify_server_results("v10.8.13", "Ascending", baseline, pages, limit=1)
+
+
+def test_assert_version_parity_success_and_failure():
+    runner = load_runner_module()
+    v108 = {
+        "Ascending": [("Song A", "Audio"), ("Song B", "Audio")],
+        "Descending": [("Song B", "Audio"), ("Song A", "Audio")],
+    }
+    v109_matching = {
+        "Ascending": [("Song A", "Audio"), ("Song B", "Audio")],
+        "Descending": [("Song B", "Audio"), ("Song A", "Audio")],
+    }
+    # Should not raise
+    runner.assert_version_parity(v108, v109_matching)
+
+    v109_mismatch = {
+        "Ascending": [("Song X", "Audio"), ("Song B", "Audio")],
+        "Descending": [("Song B", "Audio"), ("Song A", "Audio")],
+    }
+    with pytest.raises(runner.SetupError, match="Cross-version parity mismatch"):
+        runner.assert_version_parity(v108, v109_mismatch)
