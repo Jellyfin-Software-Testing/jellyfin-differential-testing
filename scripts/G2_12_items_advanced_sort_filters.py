@@ -18,15 +18,22 @@ if str(ROOT) not in sys.path:
 from scripts.G1_06_setup_and_verify import JellyfinClient, Server, SetupError
 
 
-def semantic_keys(items: list[dict[str, Any]], server_label: str) -> list[tuple[str, str]]:
+def semantic_keys(
+    items: list[dict[str, Any]], server_label: str
+) -> list[tuple[str, str]]:
     """Validate item fields and extract semantic (Name, Type) keys."""
     keys: list[tuple[str, str]] = []
     for idx, item in enumerate(items):
         if not isinstance(item, dict):
-            raise SetupError(f"{server_label}: item at index {idx} is not an object")
+            raise SetupError(
+                f"{server_label}: item at index {idx} is not an object"
+            )
         for field in ("Name", "Type", "SortName"):
             if not item.get(field):
-                raise SetupError(f"{server_label}: item at index {idx} missing required field {field!r}")
+                raise SetupError(
+                    f"{server_label}: item at index {idx} missing required "
+                    f"field {field!r}"
+                )
         keys.append((item["Name"], item["Type"]))
     return keys
 
@@ -38,11 +45,17 @@ def verify_server_results(
     pages: dict[int, dict[str, Any]],
     limit: int,
 ) -> list[tuple[str, str]]:
-    """Verify sorting and pagination invariants for a single server and return semantic keys."""
+    """Verify one server's sort and pagination invariants.
+
+    Return the baseline's semantic keys.
+    """
     if not isinstance(baseline, dict):
         raise SetupError(f"{server_label}: baseline is not an object")
     if baseline.get("StartIndex") != 0:
-        raise SetupError(f"{server_label}: baseline StartIndex must be 0, got {baseline.get('StartIndex')}")
+        raise SetupError(
+            f"{server_label}: baseline StartIndex must be 0, "
+            f"got {baseline.get('StartIndex')}"
+        )
 
     baseline_items = baseline.get("Items")
     if not isinstance(baseline_items, list):
@@ -51,11 +64,13 @@ def verify_server_results(
     total_records = baseline.get("TotalRecordCount")
     if total_records is None or len(baseline_items) != total_records:
         raise SetupError(
-            f"{server_label}: baseline length ({len(baseline_items)}) != TotalRecordCount ({total_records})"
+            f"{server_label}: baseline length ({len(baseline_items)}) "
+            f"!= TotalRecordCount ({total_records})"
         )
     if len(baseline_items) < 2:
         raise SetupError(
-            f"{server_label}: expected at least 2 items in baseline for sorting and pagination, got {len(baseline_items)}"
+            f"{server_label}: expected at least 2 items in baseline "
+            f"for sorting and pagination, got {len(baseline_items)}"
         )
 
     # Validate items and get semantic keys
@@ -71,27 +86,38 @@ def verify_server_results(
         raise SetupError(f"Unknown sort order: {order}")
 
     if sort_names != expected_sort_names:
-        raise SetupError(f"{server_label}: baseline items are not in {order} order by SortName")
+        raise SetupError(
+            f"{server_label}: baseline items are not in {order} order "
+            "by SortName"
+        )
 
     # Validate each page
     for offset, page in pages.items():
         if not isinstance(page, dict):
-            raise SetupError(f"{server_label}: page at offset {offset} is not an object")
+            raise SetupError(
+                f"{server_label}: page at offset {offset} is not an object"
+            )
         if page.get("StartIndex") != offset:
             raise SetupError(
-                f"{server_label}: page at offset {offset} returned StartIndex {page.get('StartIndex')}"
+                f"{server_label}: page at offset {offset} returned StartIndex "
+                f"{page.get('StartIndex')}"
             )
         if page.get("TotalRecordCount") != total_records:
             raise SetupError(
-                f"{server_label}: page TotalRecordCount mismatch: expected {total_records}, got {page.get('TotalRecordCount')}"
+                f"{server_label}: page TotalRecordCount mismatch: "
+                f"expected {total_records}, got {page.get('TotalRecordCount')}"
             )
 
         page_items = page.get("Items")
         if not isinstance(page_items, list):
-            raise SetupError(f"{server_label}: page at offset {offset} missing Items list")
+            raise SetupError(
+                f"{server_label}: page at offset {offset} missing Items list"
+            )
         if len(page_items) > limit:
             raise SetupError(
-                f"{server_label}: page at offset {offset} length {len(page_items)} exceeds limit {limit}"
+                f"{server_label}: page at offset {offset} length "
+                f"{len(page_items)} "
+                f"exceeds limit {limit}"
             )
 
         # Compare page items with baseline slice
@@ -99,7 +125,8 @@ def verify_server_results(
         expected_keys = baseline_keys[offset : offset + limit]
         if page_keys != expected_keys:
             raise SetupError(
-                f"{server_label}: page at offset {offset} slice mismatch with baseline: got {page_keys}, expected {expected_keys}"
+                f"{server_label}: page at offset {offset} slice mismatch with "
+                f"baseline: got {page_keys}, expected {expected_keys}"
             )
 
     return baseline_keys
@@ -123,14 +150,27 @@ def assert_version_parity(
             )
 
 
-def locate_seed_library(client: JellyfinClient, library_name: str = "Differential Seed Music") -> str:
+def locate_seed_library(
+    client: JellyfinClient, library_name: str = "Differential Seed Music"
+) -> str:
     """Locate the seed music library by name and return its ItemId."""
-    libraries = client.json("GET", "/Library/VirtualFolders", authenticate=True)
+    libraries = client.json(
+        "GET", "/Library/VirtualFolders", authenticate=True
+    )
     if not isinstance(libraries, list):
-        raise SetupError(f"{client.server.label}: invalid /Library/VirtualFolders response")
-    matches = [lib for lib in libraries if isinstance(lib, dict) and lib.get("Name") == library_name]
+        raise SetupError(
+            f"{client.server.label}: invalid /Library/VirtualFolders response"
+        )
+    matches = [
+        lib
+        for lib in libraries
+        if isinstance(lib, dict) and lib.get("Name") == library_name
+    ]
     if len(matches) != 1 or not matches[0].get("ItemId"):
-        raise SetupError(f"{client.server.label}: seed library {library_name!r} not found or missing ItemId")
+        raise SetupError(
+            f"{client.server.label}: seed library {library_name!r} "
+            "not found or missing ItemId"
+        )
     return matches[0]["ItemId"]
 
 
@@ -140,9 +180,11 @@ def run_differential_sorting(
     page_limit: int = 1,
     page_offsets: tuple[int, ...] = (0, 1),
 ) -> dict[str, Any]:
-    """Execute sorting and pagination differential verification across servers."""
+    """Run sorting and pagination differential verification across servers."""
     if len(clients) < 2:
-        raise SetupError("Differential verification requires at least two servers")
+        raise SetupError(
+            "Differential verification requires at least two servers"
+        )
     results_per_server: dict[str, dict[str, list[tuple[str, str]]]] = {}
 
     for client in clients:
@@ -178,21 +220,33 @@ def run_differential_sorting(
                     "GET",
                     "/Items",
                     authenticate=True,
-                    params={**base_params, "Limit": page_limit, "StartIndex": offset},
+                    params={
+                        **base_params,
+                        "Limit": page_limit,
+                        "StartIndex": offset,
+                    },
                 )
 
-            server_results[order] = verify_server_results(label, order, baseline, pages, page_limit)
+            server_results[order] = verify_server_results(
+                label, order, baseline, pages, page_limit
+            )
 
         results_per_server[label] = server_results
 
     if len(clients) >= 2:
-        assert_version_parity(results_per_server[clients[0].server.label], results_per_server[clients[1].server.label])
+        assert_version_parity(
+            results_per_server[clients[0].server.label],
+            results_per_server[clients[1].server.label],
+        )
 
     return {
         "task": "G2-12",
         "status": "equivalent",
         "results": {
-            label: {order: [{"Name": n, "Type": t} for n, t in keys] for order, keys in res.items()}
+            label: {
+                order: [{"Name": n, "Type": t} for n, t in keys]
+                for order, keys in res.items()
+            }
             for label, res in results_per_server.items()
         },
     }
@@ -205,16 +259,30 @@ def main() -> int:
     import requests
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--v108-url", default="http://localhost:8096", help="Jellyfin v10.8 URL")
-    parser.add_argument("--v109-url", default="http://localhost:8097", help="Jellyfin v10.9 URL")
+    parser.add_argument(
+        "--v108-url",
+        default="http://localhost:8096",
+        help="Jellyfin v10.8 URL",
+    )
+    parser.add_argument(
+        "--v109-url",
+        default="http://localhost:8097",
+        help="Jellyfin v10.9 URL",
+    )
     parser.add_argument("--username", default="admin", help="Admin username")
     parser.add_argument(
         "--password",
         default=os.environ.get("JELLYFIN_ADMIN_PASSWORD", "admin123456"),
         help="Admin password",
     )
-    parser.add_argument("--timeout", type=float, default=10, help="Request timeout in seconds")
-    parser.add_argument("--report", type=Path, default=ROOT / "docs" / "evidence" / "G2-12-sorting-differential.json")
+    parser.add_argument(
+        "--timeout", type=float, default=10, help="Request timeout in seconds"
+    )
+    parser.add_argument(
+        "--report",
+        type=Path,
+        default=ROOT / "docs" / "evidence" / "G2-12-sorting-differential.json",
+    )
     args = parser.parse_args()
 
     report: dict[str, Any] = {"task": "G2-12", "status": "failed"}
@@ -227,7 +295,10 @@ def main() -> int:
             client.authenticate(args.username, args.password)
 
         report = run_differential_sorting(clients)
-        print("G2-12 success: sorting and pagination invariants match across versions.")
+        print(
+            "G2-12 success: sorting and pagination invariants "
+            "match across versions."
+        )
         return 0
     except (SetupError, requests.RequestException, KeyError, OSError) as exc:
         report["error"] = str(exc)
@@ -236,7 +307,9 @@ def main() -> int:
     finally:
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
-            args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+            args.report.write_text(
+                json.dumps(report, indent=2) + "\n", encoding="utf-8"
+            )
 
 
 if __name__ == "__main__":
