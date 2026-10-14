@@ -144,3 +144,81 @@ def test_assert_version_parity_success_and_failure():
     }
     with pytest.raises(runner.SetupError, match="Cross-version parity mismatch"):
         runner.assert_version_parity(v108, v109_mismatch)
+
+
+class FakeRunnerClient:
+    def __init__(self, label: str):
+        self.server = type("Server", (), {"label": label, "url": f"http://fake-{label}"})()
+        self.user_id = f"user_{label}"
+        self.calls: list[tuple[str, str, dict[str, Any] | None]] = []
+
+    def authenticate(self, username, password):
+        pass
+
+    def json(self, method: str, path: str, **kwargs):
+        params = kwargs.get("params")
+        self.calls.append((method, path, params))
+        if path == "/Library/VirtualFolders":
+            return [{"Name": "Differential Seed Music", "ItemId": "lib_seed_01"}]
+        if path == "/Items":
+            order = params.get("SortOrder")
+            item_a = {"Name": "01 - Song A", "Type": "Audio", "SortName": "01 - Song A"}
+            item_b = {"Name": "02 - Song B", "Type": "Audio", "SortName": "02 - Song B"}
+            items = [item_a, item_b] if order == "Ascending" else [item_b, item_a]
+
+            start_idx = params.get("StartIndex", 0)
+            limit = params.get("Limit")
+            if limit is None:
+                page_items = items
+            else:
+                page_items = items[start_idx : start_idx + limit]
+
+            return {
+                "Items": page_items,
+                "StartIndex": start_idx,
+                "TotalRecordCount": len(items),
+            }
+        return {}
+
+
+def test_runner_queries_seed_music_baseline_and_pages():
+    runner = load_runner_module()
+    clients = [FakeRunnerClient("v10.8.13"), FakeRunnerClient("v10.9.0")]
+    report = runner.run_differential_sorting(clients)
+
+    assert report["status"] == "equivalent"
+    for client in clients:
+        item_calls = [c for c in client.calls if c[1] == "/Items"]
+        # 2 orders (Ascending, Descending) * 3 requests each (baseline, page 0, page 1) = 6 calls
+        assert len(item_calls) == 6
+        for _, _, params in item_calls:
+            assert params["UserId"] == client.user_id
+            assert params["ParentId"] == "lib_seed_01"
+            assert params["Recursive"] == "true"
+            assert params["IncludeItemTypes"] == "Audio"
+            assert params["SortBy"] == "SortName"
+            assert params["Fields"] == "SortName"
+
+        # Check baseline vs pages limit and startIndex
+        baseline_calls = [c for c in item_calls if "Limit" not in c[2]]
+        assert len(baseline_calls) == 2
+        for _, _, p in baseline_calls:
+            assert p["StartIndex"] == 0
+
+        page_calls = [c for c in item_calls if "Limit" in c[2]]
+        assert len(page_calls) == 4
+        for _, _, p in page_calls:
+            assert p["Limit"] == 1
+            assert p["StartIndex"] in (0, 1)
+
+
+def test_runner_starts_when_called_as_a_script():
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, str(RUNNER), "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert "G2-12" in result.stdout

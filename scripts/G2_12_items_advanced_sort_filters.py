@@ -116,3 +116,121 @@ def assert_version_parity(
                 f"v10.8.13: {keys_108}\n"
                 f"v10.9.0:  {keys_109}"
             )
+
+
+def locate_seed_library(client: JellyfinClient, library_name: str = "Differential Seed Music") -> str:
+    """Locate the seed music library by name and return its ItemId."""
+    libraries = client.json("GET", "/Library/VirtualFolders", authenticate=True)
+    if not isinstance(libraries, list):
+        raise SetupError(f"{client.server.label}: invalid /Library/VirtualFolders response")
+    matches = [lib for lib in libraries if isinstance(lib, dict) and lib.get("Name") == library_name]
+    if len(matches) != 1 or not matches[0].get("ItemId"):
+        raise SetupError(f"{client.server.label}: seed library {library_name!r} not found or missing ItemId")
+    return matches[0]["ItemId"]
+
+
+def run_differential_sorting(
+    clients: list[JellyfinClient],
+    library_name: str = "Differential Seed Music",
+    page_limit: int = 1,
+    page_offsets: tuple[int, ...] = (0, 1),
+) -> dict[str, Any]:
+    """Execute sorting and pagination differential verification across servers."""
+    results_per_server: dict[str, dict[str, list[tuple[str, str]]]] = {}
+
+    for client in clients:
+        label = client.server.label
+        if not client.user_id:
+            raise SetupError(f"{label}: client has no authenticated user_id")
+        parent_id = locate_seed_library(client, library_name)
+        server_results: dict[str, list[tuple[str, str]]] = {}
+
+        for order in ("Ascending", "Descending"):
+            base_params: dict[str, Any] = {
+                "UserId": client.user_id,
+                "ParentId": parent_id,
+                "Recursive": "true",
+                "IncludeItemTypes": "Audio",
+                "SortBy": "SortName",
+                "SortOrder": order,
+                "Fields": "SortName",
+            }
+
+            # Unpaginated sorted baseline: StartIndex=0, Limit omitted
+            baseline = client.json(
+                "GET",
+                "/Items",
+                authenticate=True,
+                params={**base_params, "StartIndex": 0},
+            )
+
+            # Paginated queries: Limit=page_limit, StartIndex=offset
+            pages: dict[int, dict[str, Any]] = {}
+            for offset in page_offsets:
+                pages[offset] = client.json(
+                    "GET",
+                    "/Items",
+                    authenticate=True,
+                    params={**base_params, "Limit": page_limit, "StartIndex": offset},
+                )
+
+            server_results[order] = verify_server_results(label, order, baseline, pages, page_limit)
+
+        results_per_server[label] = server_results
+
+    if len(clients) >= 2:
+        assert_version_parity(results_per_server[clients[0].server.label], results_per_server[clients[1].server.label])
+
+    return {
+        "task": "G2-12",
+        "status": "equivalent",
+        "results": {
+            label: {order: [{"Name": n, "Type": t} for n, t in keys] for order, keys in res.items()}
+            for label, res in results_per_server.items()
+        },
+    }
+
+
+def main() -> int:
+    import argparse
+    import json
+    import os
+    import requests
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--v108-url", default="http://localhost:8096", help="Jellyfin v10.8 URL")
+    parser.add_argument("--v109-url", default="http://localhost:8097", help="Jellyfin v10.9 URL")
+    parser.add_argument("--username", default="admin", help="Admin username")
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("JELLYFIN_ADMIN_PASSWORD", "admin123456"),
+        help="Admin password",
+    )
+    parser.add_argument("--timeout", type=float, default=10, help="Request timeout in seconds")
+    parser.add_argument("--report", type=Path, default=ROOT / "docs" / "evidence" / "G2-12-sorting-differential.json")
+    args = parser.parse_args()
+
+    report: dict[str, Any] = {"task": "G2-12", "status": "failed"}
+    try:
+        clients = [
+            JellyfinClient(Server("v10.8.13", args.v108_url), args.timeout),
+            JellyfinClient(Server("v10.9.0", args.v109_url), args.timeout),
+        ]
+        for client in clients:
+            client.authenticate(args.username, args.password)
+
+        report = run_differential_sorting(clients)
+        print("G2-12 success: sorting and pagination invariants match across versions.")
+        return 0
+    except (SetupError, requests.RequestException, KeyError, OSError) as exc:
+        report["error"] = str(exc)
+        print(f"G2-12 failed: {exc}", file=sys.stderr)
+        return 1
+    finally:
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
