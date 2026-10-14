@@ -53,6 +53,10 @@ def verify_server_results(
         raise SetupError(
             f"{server_label}: baseline length ({len(baseline_items)}) != TotalRecordCount ({total_records})"
         )
+    if len(baseline_items) < 2:
+        raise SetupError(
+            f"{server_label}: expected at least 2 items in baseline for sorting and pagination, got {len(baseline_items)}"
+        )
 
     # Validate items and get semantic keys
     baseline_keys = semantic_keys(baseline_items, server_label)
@@ -91,7 +95,6 @@ def verify_server_results(
             )
 
         # Compare page items with baseline slice
-        expected_slice = baseline_items[offset : offset + limit]
         page_keys = semantic_keys(page_items, server_label)
         expected_keys = baseline_keys[offset : offset + limit]
         if page_keys != expected_keys:
@@ -108,8 +111,10 @@ def assert_version_parity(
 ) -> None:
     """Compare sorted semantic key sequences between v10.8.13 and v10.9.0."""
     for order in ("Ascending", "Descending"):
-        keys_108 = v108.get(order)
-        keys_109 = v109.get(order)
+        if order not in v108 or order not in v109:
+            raise SetupError(f"Missing sort order {order!r} in parity results")
+        keys_108 = v108[order]
+        keys_109 = v109[order]
         if keys_108 != keys_109:
             raise SetupError(
                 f"Cross-version parity mismatch for {order} order:\n"
@@ -136,6 +141,8 @@ def run_differential_sorting(
     page_offsets: tuple[int, ...] = (0, 1),
 ) -> dict[str, Any]:
     """Execute sorting and pagination differential verification across servers."""
+    if len(clients) < 2:
+        raise SetupError("Differential verification requires at least two servers")
     results_per_server: dict[str, dict[str, list[tuple[str, str]]]] = {}
 
     for client in clients:
