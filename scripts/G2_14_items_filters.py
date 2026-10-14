@@ -127,6 +127,10 @@ def run_differential_filters(
         raise SetupError(
             f"run_differential_filters requires exactly 2 clients, got {len(clients)}"
         )
+    if clients[0].server.label == clients[1].server.label:
+        raise SetupError(
+            f"run_differential_filters requires clients with distinct server labels, got duplicate '{clients[0].server.label}'"
+        )
 
     normalized_results: dict[str, NormalizedFilters] = {}
     formatted_results: dict[str, dict[str, Any]] = {}

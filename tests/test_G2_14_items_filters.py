@@ -260,6 +260,13 @@ def test_run_differential_filters_requires_two_clients():
         run_differential_filters((c1,))  # type: ignore
 
 
+def test_run_differential_filters_rejects_duplicate_server_labels():
+    c1 = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music", "ItemId": "lib1"}], {})
+    c2 = FakeClient("v10.8.13", "u2", [{"Name": "Differential Seed Music", "ItemId": "lib2"}], {})
+    with pytest.raises(SetupError, match="distinct server labels"):
+        run_differential_filters((c1, c2))
+
+
 def test_run_differential_filters_uses_per_instance_context():
     c1 = FakeClient(
         "v10.8.13",
