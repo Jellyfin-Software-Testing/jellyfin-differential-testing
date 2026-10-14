@@ -90,7 +90,12 @@ def resolve_seed_library(
     client: JellyfinClient, library_name: str = "Differential Seed Music"
 ) -> str:
     """Resolve ItemId for the named seed library from /Library/VirtualFolders."""
-    folders = client.request("GET", "/Library/VirtualFolders")
+    if hasattr(client, "json"):
+        folders = client.json("GET", "/Library/VirtualFolders", authenticate=True)
+    else:
+        res = client.request("GET", "/Library/VirtualFolders", authenticate=True)
+        folders = res.json() if hasattr(res, "json") else res
+
     if not isinstance(folders, list):
         raise SetupError(
             f"Expected list from /Library/VirtualFolders on {client.server.label}, got {type(folders).__name__}"
@@ -133,9 +138,17 @@ def run_differential_filters(
                 f"Client {label} is not authenticated (missing user_id)"
             )
         parent_id = resolve_seed_library(client, library_name)
-        raw_filters = client.request(
-            "GET", "/Items/Filters", params={"UserId": client.user_id, "ParentId": parent_id}
-        )
+        params = {"UserId": client.user_id, "ParentId": parent_id}
+        if hasattr(client, "json"):
+            raw_filters = client.json(
+                "GET", "/Items/Filters", authenticate=True, params=params
+            )
+        else:
+            res = client.request(
+                "GET", "/Items/Filters", authenticate=True, params=params
+            )
+            raw_filters = res.json() if hasattr(res, "json") else res
+
         norm = normalize_filter_response(raw_filters, label)
         normalized_results[label] = norm
 

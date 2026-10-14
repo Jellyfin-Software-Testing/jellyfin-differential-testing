@@ -198,6 +198,7 @@ class FakeClient:
         *,
         params: dict | None = None,
         json: Any = None,
+        **kwargs: Any,
     ) -> Any:
         self.calls.append((method, path, params))
         if path == "/Library/VirtualFolders":
@@ -205,6 +206,9 @@ class FakeClient:
         if path == "/Items/Filters":
             return self.filters_response
         raise NotImplementedError(path)
+
+    def json(self, method: str, path: str, **kwargs: Any) -> Any:
+        return self.request(method, path, **kwargs)
 
 
 def test_resolve_seed_library_rejects_missing_or_ambiguous_library():

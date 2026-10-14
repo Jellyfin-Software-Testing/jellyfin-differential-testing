@@ -1,0 +1,42 @@
+{
+  "task": "G2-14",
+  "status": "limited_coverage",
+  "parity": "equivalent",
+  "coverage": "limited",
+  "limitedFields": [
+    "Genres",
+    "Years",
+    "OfficialRatings"
+  ],
+  "differences": [],
+  "results": {
+    "v10.8.13": {
+      "Genres": {
+        "state": "values",
+        "values": []
+      },
+      "Years": {
+        "state": "values",
+        "values": []
+      },
+      "OfficialRatings": {
+        "state": "values",
+        "values": []
+      }
+    },
+    "v10.9.0": {
+      "Genres": {
+        "state": "values",
+        "values": []
+      },
+      "Years": {
+        "state": "values",
+        "values": []
+      },
+      "OfficialRatings": {
+        "state": "values",
+        "values": []
+      }
+    }
+  }
+}
