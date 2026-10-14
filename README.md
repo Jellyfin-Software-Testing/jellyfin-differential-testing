@@ -24,7 +24,7 @@ py -3 -m venv .venv
 python -m pip install -r requirements.txt
 docker compose -f docker/docker-compose.yml up -d
 python -m pytest -q
-python scripts/g1_06_setup_and_verify.py
+python scripts/G1_06_setup_and_verify.py
 ```
 
 Kết quả đúng phải kết thúc bằng:
@@ -55,7 +55,7 @@ container test cục bộ. Có thể đặt biến `JELLYFIN_ADMIN_PASSWORD` tr�
 Khi state hiện có đã đúng, chỉ cần chạy lại:
 
 ```powershell
-python scripts/g1_06_setup_and_verify.py
+python scripts/G1_06_setup_and_verify.py
 ```
 
 Nếu script báo state cũ khác manifest, dừng containers trước:

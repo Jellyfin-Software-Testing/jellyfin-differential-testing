@@ -1,41 +1,49 @@
 {
   "task": "G2-14",
-  "status": "limited_coverage",
+  "status": "equivalent",
   "parity": "equivalent",
-  "coverage": "limited",
-  "limitedFields": [
-    "Genres",
-    "Years",
-    "OfficialRatings"
-  ],
+  "coverage": "full",
+  "limitedFields": [],
   "differences": [],
   "results": {
     "v10.8.13": {
       "Genres": {
         "state": "values",
-        "values": []
+        "values": [
+          "Drama"
+        ]
       },
       "Years": {
         "state": "values",
-        "values": []
+        "values": [
+          2020
+        ]
       },
       "OfficialRatings": {
         "state": "values",
-        "values": []
+        "values": [
+          "PG-13"
+        ]
       }
     },
     "v10.9.0": {
       "Genres": {
         "state": "values",
-        "values": []
+        "values": [
+          "Drama"
+        ]
       },
       "Years": {
         "state": "values",
-        "values": []
+        "values": [
+          2020
+        ]
       },
       "OfficialRatings": {
         "state": "values",
-        "values": []
+        "values": [
+          "PG-13"
+        ]
       }
     }
   }

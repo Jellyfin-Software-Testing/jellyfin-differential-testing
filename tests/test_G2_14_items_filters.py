@@ -1,12 +1,20 @@
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any
 
 import pytest
-from scripts.G1_06_setup_and_verify import SetupError
+
+from scripts.G1_06_setup_and_verify import Server, SetupError
 from scripts.G2_14_items_filters import (
-    FILTER_FIELDS,
+    FILTER_LIBRARY_NAME,
+    SEED_FILTER_SENTINELS,
     compare_filter_values,
     limited_coverage_fields,
     normalize_filter_response,
+    resolve_seed_library,
+    run_differential_filters,
 )
 
 
@@ -122,7 +130,7 @@ def test_compare_filter_values_reports_field_mismatches():
     assert compare_filter_values(v108, v108) == []
 
 
-def test_limited_coverage_requires_values_on_both_servers():
+def test_limited_coverage_requires_expected_seed_values():
     results = {
         "v10.8.13": {
             "Genres": ("values", ["Drama"]),
@@ -153,7 +161,7 @@ def test_limited_coverage_requires_values_on_both_servers():
     }
     assert limited_coverage_fields(partial) == ["Years"]
 
-    # Both populated -> empty limited list
+    # Expected deterministic seed values on both servers -> full coverage
     full = {
         "v10.8.13": {
             "Genres": ("values", ["Drama"]),
@@ -168,13 +176,23 @@ def test_limited_coverage_requires_values_on_both_servers():
     }
     assert limited_coverage_fields(full) == []
 
-import subprocess
-import sys
-from scripts.G1_06_setup_and_verify import Server
-from scripts.G2_14_items_filters import (
-    resolve_seed_library,
-    run_differential_filters,
-)
+    arbitrary_values = {
+        "v10.8.13": {
+            "Genres": ("values", ["Action"]),
+            "Years": ("values", [1999]),
+            "OfficialRatings": ("values", ["R"]),
+        },
+        "v10.9.0": {
+            "Genres": ("values", ["Action"]),
+            "Years": ("values", [1999]),
+            "OfficialRatings": ("values", ["R"]),
+        },
+    }
+    assert limited_coverage_fields(arbitrary_values) == [
+        "Genres",
+        "Years",
+        "OfficialRatings",
+    ]
 
 
 class FakeClient:
@@ -214,43 +232,62 @@ class FakeClient:
 def test_resolve_seed_library_rejects_missing_or_ambiguous_library():
     client_empty = FakeClient("v10.8.13", "user1", [], {})
     with pytest.raises(SetupError, match="not found"):
-        resolve_seed_library(client_empty, "Differential Seed Music")
+        resolve_seed_library(client_empty, FILTER_LIBRARY_NAME)
 
-    client_other = FakeClient("v10.8.13", "user1", [{"Name": "Movies", "ItemId": "123"}], {})
+    client_other = FakeClient(
+        "v10.8.13", "user1", [{"Name": "Movies", "ItemId": "123"}], {}
+    )
     with pytest.raises(SetupError, match="not found"):
-        resolve_seed_library(client_other, "Differential Seed Music")
+        resolve_seed_library(client_other, FILTER_LIBRARY_NAME)
 
     client_ambiguous = FakeClient(
         "v10.8.13",
         "user1",
         [
-            {"Name": "Differential Seed Music", "ItemId": "123"},
-            {"Name": "Differential Seed Music", "ItemId": "456"},
+            {"Name": FILTER_LIBRARY_NAME, "ItemId": "123"},
+            {"Name": FILTER_LIBRARY_NAME, "ItemId": "456"},
         ],
         {},
     )
     with pytest.raises(SetupError, match="ambiguous|multiple"):
-        resolve_seed_library(client_ambiguous, "Differential Seed Music")
+        resolve_seed_library(client_ambiguous, FILTER_LIBRARY_NAME)
 
 
 def test_resolve_seed_library_rejects_missing_or_invalid_item_id():
     # missing ItemId
-    c1 = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music"}], {})
+    c1 = FakeClient(
+        "v10.8.13", "u1", [{"Name": FILTER_LIBRARY_NAME}], {}
+    )
     with pytest.raises(SetupError):
         resolve_seed_library(c1)
 
     # empty string ItemId
-    c2 = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music", "ItemId": ""}], {})
+    c2 = FakeClient(
+        "v10.8.13",
+        "u1",
+        [{"Name": FILTER_LIBRARY_NAME, "ItemId": ""}],
+        {},
+    )
     with pytest.raises(SetupError):
         resolve_seed_library(c2)
 
     # non-string ItemId
-    c3 = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music", "ItemId": 12345}], {})
+    c3 = FakeClient(
+        "v10.8.13",
+        "u1",
+        [{"Name": FILTER_LIBRARY_NAME, "ItemId": 12345}],
+        {},
+    )
     with pytest.raises(SetupError):
         resolve_seed_library(c3)
 
     # valid
-    c_ok = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music", "ItemId": "lib-abc"}], {})
+    c_ok = FakeClient(
+        "v10.8.13",
+        "u1",
+        [{"Name": FILTER_LIBRARY_NAME, "ItemId": "lib-abc"}],
+        {},
+    )
     assert resolve_seed_library(c_ok) == "lib-abc"
 
 
@@ -261,8 +298,18 @@ def test_run_differential_filters_requires_two_clients():
 
 
 def test_run_differential_filters_rejects_duplicate_server_labels():
-    c1 = FakeClient("v10.8.13", "u1", [{"Name": "Differential Seed Music", "ItemId": "lib1"}], {})
-    c2 = FakeClient("v10.8.13", "u2", [{"Name": "Differential Seed Music", "ItemId": "lib2"}], {})
+    c1 = FakeClient(
+        "v10.8.13",
+        "u1",
+        [{"Name": "Differential Seed Music", "ItemId": "lib1"}],
+        {},
+    )
+    c2 = FakeClient(
+        "v10.8.13",
+        "u2",
+        [{"Name": "Differential Seed Music", "ItemId": "lib2"}],
+        {},
+    )
     with pytest.raises(SetupError, match="distinct server labels"):
         run_differential_filters((c1, c2))
 
@@ -271,14 +318,14 @@ def test_run_differential_filters_uses_per_instance_context():
     c1 = FakeClient(
         "v10.8.13",
         "user-v108",
-        [{"Name": "Differential Seed Music", "ItemId": "lib-v108"}],
-        {"Genres": ["Rock"], "Years": [2020], "OfficialRatings": ["PG"]},
+        [{"Name": FILTER_LIBRARY_NAME, "ItemId": "lib-v108"}],
+        {"Genres": ["Drama"], "Years": [2020], "OfficialRatings": ["PG-13"]},
     )
     c2 = FakeClient(
         "v10.9.0",
         "user-v109",
-        [{"Name": "Differential Seed Music", "ItemId": "lib-v109"}],
-        {"Genres": ["Rock"], "Years": [2020], "OfficialRatings": ["PG"]},
+        [{"Name": FILTER_LIBRARY_NAME, "ItemId": "lib-v109"}],
+        {"Genres": ["Drama"], "Years": [2020], "OfficialRatings": ["PG-13"]},
     )
 
     report = run_differential_filters((c1, c2))
@@ -287,12 +334,22 @@ def test_run_differential_filters_uses_per_instance_context():
     assert report["coverage"] == "full"
 
     # Verify per-instance calls
-    filter_calls_c1 = [call for call in c1.calls if call[1] == "/Items/Filters"]
-    filter_calls_c2 = [call for call in c2.calls if call[1] == "/Items/Filters"]
+    filter_calls_c1 = [
+        call for call in c1.calls if call[1] == "/Items/Filters"
+    ]
+    filter_calls_c2 = [
+        call for call in c2.calls if call[1] == "/Items/Filters"
+    ]
     assert len(filter_calls_c1) == 1
-    assert filter_calls_c1[0][2] == {"UserId": "user-v108", "ParentId": "lib-v108"}
+    assert filter_calls_c1[0][2] == {
+        "UserId": "user-v108",
+        "ParentId": "lib-v108",
+    }
     assert len(filter_calls_c2) == 1
-    assert filter_calls_c2[0][2] == {"UserId": "user-v109", "ParentId": "lib-v109"}
+    assert filter_calls_c2[0][2] == {
+        "UserId": "user-v109",
+        "ParentId": "lib-v109",
+    }
 
 
 def test_run_differential_filters_marks_empty_parity_limited():
@@ -309,12 +366,36 @@ def test_run_differential_filters_marks_empty_parity_limited():
         {"Genres": [], "Years": [], "OfficialRatings": []},
     )
 
-    report = run_differential_filters((c1, c2))
+    report = run_differential_filters(
+        (c1, c2), library_name="Differential Seed Music"
+    )
     assert report["status"] == "limited_coverage"
     assert report["parity"] == "equivalent"
     assert report["coverage"] == "limited"
-    assert set(report["limitedFields"]) == {"Genres", "Years", "OfficialRatings"}
+    assert set(report["limitedFields"]) == {
+        "Genres",
+        "Years",
+        "OfficialRatings",
+    }
     assert report["differences"] == []
+
+
+def test_filter_seed_nfo_matches_expected_filter_sentinels():
+    seed_dir = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "seed-data"
+        / "seed-filter-movies"
+        / "G2-14 Filter Fixture (2020)"
+    )
+    media = seed_dir / "G2-14 Filter Fixture (2020).mp4"
+    nfo = seed_dir / "G2-14 Filter Fixture (2020).nfo"
+
+    assert media.is_file() and media.stat().st_size > 0
+    metadata = ET.parse(nfo).getroot()
+    assert metadata.findtext("genre") == SEED_FILTER_SENTINELS["Genres"]
+    assert int(metadata.findtext("year", "0")) == SEED_FILTER_SENTINELS["Years"]
+    assert metadata.findtext("mpaa") == SEED_FILTER_SENTINELS["OfficialRatings"]
 
 
 def test_run_differential_filters_report_preserves_missing_null_empty():
@@ -331,7 +412,9 @@ def test_run_differential_filters_report_preserves_missing_null_empty():
         {"Genres": None, "Years": []},  # OfficialRatings missing
     )
 
-    report = run_differential_filters((c1, c2))
+    report = run_differential_filters(
+        (c1, c2), library_name="Differential Seed Music"
+    )
     res1 = report["results"]["v10.8.13"]
     assert res1["Genres"] == {"state": "null"}
     assert res1["Years"] == {"state": "values", "values": []}
@@ -352,7 +435,9 @@ def test_run_differential_filters_reports_mismatches():
         {"Genres": ["Comedy"], "Years": [2020], "OfficialRatings": ["PG"]},
     )
 
-    report = run_differential_filters((c1, c2))
+    report = run_differential_filters(
+        (c1, c2), library_name="Differential Seed Music"
+    )
     assert report["status"] == "different"
     assert report["parity"] == "different"
     assert report["differences"] == ["Genres"]
@@ -372,3 +457,4 @@ def test_runner_starts_as_script():
     assert "--password" in proc.stdout
     assert "--timeout" in proc.stdout
     assert "--report" in proc.stdout
+    assert "--library-name" in proc.stdout

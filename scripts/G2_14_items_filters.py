@@ -14,24 +14,34 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence, Union
 
+import requests
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import requests
-
 from scripts.G1_06_setup_and_verify import JellyfinClient, Server, SetupError
 
 DEFAULT_REPORT = ROOT / "docs" / "evidence" / "G2-14-filters-differential.json"
+FILTER_LIBRARY_NAME = "Differential Seed Filters"
 FILTER_FIELDS: tuple[str, ...] = ("Genres", "Years", "OfficialRatings")
+# Full coverage requires the deterministic sample values specified by G2-14.
+SEED_FILTER_SENTINELS: dict[str, str | int] = {
+    "Genres": "Drama",
+    "Years": 2020,
+    "OfficialRatings": "PG-13",
+}
 NormalizedFilters = dict[str, tuple[str, Union[list[str], list[int], None]]]
 
 
-def normalize_filter_response(payload: object, server_label: str) -> NormalizedFilters:
-    """Validate and normalize /Items/Filters payload into explicit state tuples."""
+def normalize_filter_response(
+    payload: object, server_label: str
+) -> NormalizedFilters:
+    """Validate and normalize filters into explicit state tuples."""
     if not isinstance(payload, dict):
         raise SetupError(
-            f"Expected dict response for /Items/Filters on {server_label}, got {type(payload).__name__}"
+            f"Expected dict response for /Items/Filters on {server_label}, "
+            f"got {type(payload).__name__}"
         )
 
     normalized: NormalizedFilters = {}
@@ -42,7 +52,8 @@ def normalize_filter_response(payload: object, server_label: str) -> NormalizedF
             normalized[field] = ("null", None)
         elif not isinstance(payload[field], list):
             raise SetupError(
-                f"Expected list or null for field {field} on {server_label}, got {type(payload[field]).__name__}"
+                f"Expected list or null for field {field} on {server_label}, "
+                f"got {type(payload[field]).__name__}"
             )
         else:
             raw_list = payload[field]
@@ -50,13 +61,16 @@ def normalize_filter_response(payload: object, server_label: str) -> NormalizedF
                 for item in raw_list:
                     if not isinstance(item, str):
                         raise SetupError(
-                            f"Expected string items in {field} on {server_label}, found {type(item).__name__}"
+                            "Expected string items in "
+                            f"{field} on {server_label}, "
+                            f"found {type(item).__name__}"
                         )
             elif field == "Years":
                 for item in raw_list:
                     if type(item) is not int:
                         raise SetupError(
-                            f"Expected int items in Years on {server_label}, found {type(item).__name__}"
+                            f"Expected int items in Years on {server_label}, "
+                            f"found {type(item).__name__}"
                         )
             normalized[field] = ("values", sorted(raw_list))
 
@@ -74,62 +88,83 @@ def compare_filter_values(
     return differences
 
 
-def limited_coverage_fields(results: dict[str, NormalizedFilters]) -> list[str]:
-    """Return fields that lack non-empty values on one or both servers."""
+def limited_coverage_fields(
+    results: dict[str, NormalizedFilters]
+) -> list[str]:
+    """Return fields missing expected seed values on either server."""
     limited: list[str] = []
     for field in FILTER_FIELDS:
-        for server_label, server_filters in results.items():
+        for server_filters in results.values():
             state, values = server_filters.get(field, ("missing", None))
-            if state != "values" or not values:
+            if (
+                state != "values"
+                or not values
+                or SEED_FILTER_SENTINELS[field] not in values
+            ):
                 limited.append(field)
                 break
     return limited
 
 
 def resolve_seed_library(
-    client: JellyfinClient, library_name: str = "Differential Seed Music"
+    client: JellyfinClient, library_name: str = FILTER_LIBRARY_NAME
 ) -> str:
-    """Resolve ItemId for the named seed library from /Library/VirtualFolders."""
+    """Resolve the named library's ItemId from /Library/VirtualFolders."""
     if hasattr(client, "json"):
-        folders = client.json("GET", "/Library/VirtualFolders", authenticate=True)
+        folders = client.json(
+            "GET", "/Library/VirtualFolders", authenticate=True
+        )
     else:
-        res = client.request("GET", "/Library/VirtualFolders", authenticate=True)
+        res = client.request(
+            "GET", "/Library/VirtualFolders", authenticate=True
+        )
         folders = res.json() if hasattr(res, "json") else res
 
     if not isinstance(folders, list):
         raise SetupError(
-            f"Expected list from /Library/VirtualFolders on {client.server.label}, got {type(folders).__name__}"
+            f"Expected list from /Library/VirtualFolders on "
+            f"{client.server.label}, got {type(folders).__name__}"
         )
 
-    matches = [f for f in folders if isinstance(f, dict) and f.get("Name") == library_name]
+    matches = [
+        folder
+        for folder in folders
+        if isinstance(folder, dict) and folder.get("Name") == library_name
+    ]
     if not matches:
-        raise SetupError(f"Library '{library_name}' not found on {client.server.label}")
+        raise SetupError(
+            f"Library '{library_name}' not found on {client.server.label}"
+        )
     if len(matches) > 1:
         raise SetupError(
-            f"Found multiple matching libraries named '{library_name}' on {client.server.label}"
+            f"Found multiple matching libraries named '{library_name}' "
+            f"on {client.server.label}"
         )
 
     folder = matches[0]
     item_id = folder.get("ItemId")
     if not item_id or not isinstance(item_id, str) or not item_id.strip():
         raise SetupError(
-            f"Invalid or missing ItemId for library '{library_name}' on {client.server.label}"
+            f"Invalid or missing ItemId for library '{library_name}' "
+            f"on {client.server.label}"
         )
     return item_id
 
 
 def run_differential_filters(
     clients: tuple[JellyfinClient, JellyfinClient] | Sequence[JellyfinClient],
-    library_name: str = "Differential Seed Music",
+    library_name: str = FILTER_LIBRARY_NAME,
 ) -> dict[str, Any]:
-    """Compare /Items/Filters across two clients for the resolved seed library."""
+    """Compare /Items/Filters for the resolved seed library on both clients."""
     if len(clients) != 2:
         raise SetupError(
-            f"run_differential_filters requires exactly 2 clients, got {len(clients)}"
+            "run_differential_filters requires exactly 2 clients, "
+            f"got {len(clients)}"
         )
     if clients[0].server.label == clients[1].server.label:
         raise SetupError(
-            f"run_differential_filters requires clients with distinct server labels, got duplicate '{clients[0].server.label}'"
+            "run_differential_filters requires clients with distinct server "
+            f"labels, got duplicate '{clients[0].server.label}'"
         )
 
     normalized_results: dict[str, NormalizedFilters] = {}
@@ -169,7 +204,8 @@ def run_differential_filters(
 
     c1, c2 = clients[0], clients[1]
     differences = compare_filter_values(
-        normalized_results[c1.server.label], normalized_results[c2.server.label]
+        normalized_results[c1.server.label],
+        normalized_results[c2.server.label],
     )
     limited = limited_coverage_fields(normalized_results)
 
@@ -219,6 +255,11 @@ def main() -> int:
         default=DEFAULT_REPORT,
         help="Path to write the evidence report",
     )
+    parser.add_argument(
+        "--library-name",
+        default=FILTER_LIBRARY_NAME,
+        help="Seed library to query (use Differential Seed Music for empty case)",
+    )
     args = parser.parse_args()
 
     report: dict[str, Any] = {
@@ -237,23 +278,32 @@ def main() -> int:
         for client in clients:
             client.authenticate(args.username, args.password)
 
-        report = run_differential_filters(clients)
+        report = run_differential_filters(clients, args.library_name)
         if report["status"] == "equivalent":
             print("G2-14 success: filter parity matches with full coverage.")
             exit_code = 0
         elif report["status"] == "limited_coverage":
             print(
-                "G2-14 partial: filter parity matches across versions, but coverage is limited "
-                f"(unpopulated fields: {', '.join(report.get('limitedFields', []))})."
+                "G2-14 partial: filter parity matches across versions, "
+                "but coverage is limited "
+                "(unpopulated fields: "
+                f"{', '.join(report.get('limitedFields', []))})."
             )
             exit_code = 2
         else:
             print(
-                f"G2-14 mismatch: filter differences detected: {report.get('differences')}",
+                "G2-14 mismatch: filter differences detected: "
+                f"{report.get('differences')}",
                 file=sys.stderr,
             )
             exit_code = 1
-    except (SetupError, requests.RequestException, KeyError, ValueError, OSError) as exc:
+    except (
+        SetupError,
+        requests.RequestException,
+        KeyError,
+        ValueError,
+        OSError,
+    ) as exc:
         report["error"] = str(exc)
         print(f"G2-14 failed: {exc}", file=sys.stderr)
         exit_code = 1
