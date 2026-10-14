@@ -1,0 +1,50 @@
+{
+  "task": "G2-12",
+  "status": "equivalent",
+  "results": {
+    "v10.8.13": {
+      "Ascending": [
+        {
+          "Name": "01 - Reference Tone",
+          "Type": "Audio"
+        },
+        {
+          "Name": "02 - Comparison Tone",
+          "Type": "Audio"
+        }
+      ],
+      "Descending": [
+        {
+          "Name": "02 - Comparison Tone",
+          "Type": "Audio"
+        },
+        {
+          "Name": "01 - Reference Tone",
+          "Type": "Audio"
+        }
+      ]
+    },
+    "v10.9.0": {
+      "Ascending": [
+        {
+          "Name": "01 - Reference Tone",
+          "Type": "Audio"
+        },
+        {
+          "Name": "02 - Comparison Tone",
+          "Type": "Audio"
+        }
+      ],
+      "Descending": [
+        {
+          "Name": "02 - Comparison Tone",
+          "Type": "Audio"
+        },
+        {
+          "Name": "01 - Reference Tone",
+          "Type": "Audio"
+        }
+      ]
+    }
+  }
+}
