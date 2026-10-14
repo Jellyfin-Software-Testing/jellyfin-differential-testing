@@ -9,7 +9,7 @@ from models.user_data_model import FavoriteAction, FavoriteState
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "g2_10_stateful_differential.py"
+RUNNER = ROOT / "scripts" / "G2_10_stateful_differential.py"
 
 
 def load_runner_module():

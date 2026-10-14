@@ -17,11 +17,11 @@ Start both Jellyfin instances, then run G1-06 first. Its evidence must report
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d
-python scripts/g1_06_setup_and_verify.py
+python scripts/G1_06_setup_and_verify.py
 ```
 
 ```bash
-python scripts/g2_10_stateful_differential.py
+python scripts/G2_10_stateful_differential.py
 ```
 
 The runner compares Jellyfin v10.8.13 and v10.9.0 after every favorite-state
