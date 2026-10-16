@@ -322,3 +322,215 @@ def test_run_instance_cleanup_failure_marks_instance_failed():
     assert "simulated cleanup failure" in res["cleanup"]["error"]
 
 
+def _make_dummy_instance(server, seed_id, original_fav, status_code=204, is_fav=True, in_favs=True):
+    return {
+        "server": server,
+        "seed_id": seed_id,
+        "original_state": {"is_favorite": original_fav, "in_favorites": original_fav},
+        "normalize_initial": {"action": "DELETE", "status": "passed"} if original_fav else {"skipped": True},
+        "steps": {
+            "post_favorite": {"status": "passed", "status_code": status_code},
+            "verify_favorite": {"status": "passed", "is_favorite": is_fav, "in_favorites": in_favs},
+            "delete_favorite": {"status": "passed", "status_code": status_code},
+            "verify_unfavorite": {"status": "passed", "is_favorite": False, "in_favorites": False},
+        },
+        "cleanup": {"status": "passed"},
+        "success": True,
+        "error": None,
+    }
+
+
+def test_compare_semantics_passes_with_status_drift_and_different_ids():
+    runner = load_runner_module()
+    # v10.8 has item-1, baseline False, status 204
+    inst_108 = _make_dummy_instance("v10.8.13", "item-1", original_fav=False, status_code=204)
+    # v10.9 has item-2, baseline True (normalized), status 200
+    inst_109 = _make_dummy_instance("v10.9.0", "item-2", original_fav=True, status_code=200)
+
+    eq, diffs = runner.compare_semantics(inst_108, inst_109)
+    assert eq is True
+    assert diffs == []
+
+
+def test_compare_semantics_fails_on_state_mismatch():
+    runner = load_runner_module()
+    inst_108 = _make_dummy_instance("v10.8.13", "item-1", original_fav=False, is_fav=True, in_favs=True)
+    inst_109 = _make_dummy_instance("v10.9.0", "item-2", original_fav=False, is_fav=False, in_favs=False)
+
+    eq, diffs = runner.compare_semantics(inst_108, inst_109)
+    assert eq is False
+    assert any("verify_favorite" in d for d in diffs)
+
+
+def test_compare_semantics_fails_on_missing_checkpoint():
+    runner = load_runner_module()
+    inst_108 = _make_dummy_instance("v10.8.13", "item-1", original_fav=False)
+    inst_109 = _make_dummy_instance("v10.9.0", "item-2", original_fav=False)
+    del inst_109["steps"]["delete_favorite"]
+
+    eq, diffs = runner.compare_semantics(inst_108, inst_109)
+    assert eq is False
+    assert any("delete_favorite" in d for d in diffs)
+
+
+def test_main_help():
+    runner = load_runner_module()
+    with pytest.raises(SystemExit) as exc:
+        runner.main(["--help"])
+    assert exc.value.code == 0
+
+
+def test_main_success(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    # Mock client init & auth
+    def mock_auth(self, username, password):
+        self.user_id = "mock-admin"
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", mock_auth)
+
+    # Mock find_seed_item
+    monkeypatch.setattr(
+        runner,
+        "find_seed_item",
+        lambda client, name, item_type: {"Id": f"seed-{client.server.label}", "Name": name, "Type": item_type},
+    )
+
+    # Mock run_instance to return dummy successful instances
+    monkeypatch.setattr(
+        runner,
+        "run_instance",
+        lambda client, user_id, seed: _make_dummy_instance(client.server.label, seed["Id"], original_fav=False),
+    )
+
+    exit_code = runner.main(["--report", str(report_file)])
+    assert exit_code == 0
+    assert report_file.exists()
+
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["task"] == "G2-15"
+    assert report["status"] == "passed"
+    assert report["parity"] == "equivalent"
+    assert "v10.8.13" in report["instances"]
+    assert "v10.9.0" in report["instances"]
+
+
+def test_main_mismatch_returns_nonzero(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", lambda self, u, p: setattr(self, "user_id", "admin"))
+    monkeypatch.setattr(runner, "find_seed_item", lambda client, n, t: {"Id": "seed-1", "Name": n, "Type": t})
+
+    def mock_run(client, user_id, seed):
+        if "10.8" in client.server.label:
+            return _make_dummy_instance(client.server.label, seed["Id"], original_fav=False, is_fav=True, in_favs=True)
+        return _make_dummy_instance(client.server.label, seed["Id"], original_fav=False, is_fav=False, in_favs=False)
+
+    monkeypatch.setattr(runner, "run_instance", mock_run)
+
+    exit_code = runner.main(["--report", str(report_file)])
+    assert exit_code != 0
+
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    assert report["parity"] == "mismatched"
+    assert len(report["parity_diffs"]) > 0
+
+
+def test_main_peer_setup_failure_runs_healthy_peer(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", lambda self, u, p: setattr(self, "user_id", "admin"))
+
+    def mock_find_seed(client, n, t):
+        if "10.8" in client.server.label:
+            raise SetupError(f"{client.server.label}: seed not found")
+        return {"Id": "seed-109", "Name": n, "Type": t}
+
+    monkeypatch.setattr(runner, "find_seed_item", mock_find_seed)
+    monkeypatch.setattr(
+        runner,
+        "run_instance",
+        lambda client, user_id, seed: _make_dummy_instance(client.server.label, seed["Id"], original_fav=False),
+    )
+
+    exit_code = runner.main(["--report", str(report_file)])
+    assert exit_code != 0
+
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    # Both instances present
+    assert report["instances"]["v10.8.13"]["error"] is not None
+    assert report["instances"]["v10.9.0"]["success"] is True
+    assert report["parity"] == "mismatched"
+
+
+def test_main_g1_report_validation(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+    g1_file = tmp_path / "g1-evidence.json"
+
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", lambda self, u, p: setattr(self, "user_id", "admin"))
+    monkeypatch.setattr(runner, "find_seed_item", lambda client, n, t: {"Id": "seed-1", "Name": n, "Type": t})
+    monkeypatch.setattr(
+        runner,
+        "run_instance",
+        lambda client, user_id, seed: _make_dummy_instance(client.server.label, seed["Id"], original_fav=False),
+    )
+
+    # Invalid G1 report (status != "equivalent")
+    g1_file.write_text(json.dumps({"status": "failed"}), encoding="utf-8")
+    exit_code = runner.main(["--report", str(report_file), "--g1-report", str(g1_file)])
+    assert exit_code != 0
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    assert "g1-06" in report["error"].lower()
+
+    # Valid G1 report
+    g1_file.write_text(json.dumps({"status": "equivalent"}), encoding="utf-8")
+    exit_code_ok = runner.main(["--report", str(report_file), "--g1-report", str(g1_file)])
+    assert exit_code_ok == 0
+
+
+def test_main_cleanup_failure_fails_overall_run(tmp_path, monkeypatch):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", lambda self, u, p: setattr(self, "user_id", "admin"))
+    monkeypatch.setattr(runner, "find_seed_item", lambda client, n, t: {"Id": "seed-1", "Name": n, "Type": t})
+
+    def mock_run(client, user_id, seed):
+        inst = _make_dummy_instance(client.server.label, seed["Id"], original_fav=False)
+        if "10.8" in client.server.label:
+            inst["cleanup"] = {"status": "failed", "error": "simulated cleanup fail"}
+            inst["success"] = False
+        return inst
+
+    monkeypatch.setattr(runner, "run_instance", mock_run)
+
+    exit_code = runner.main(["--report", str(report_file)])
+    assert exit_code != 0
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+
+
+def test_main_report_write_failure(monkeypatch):
+    runner = load_runner_module()
+
+    monkeypatch.setattr(runner.JellyfinClient, "authenticate", lambda self, u, p: setattr(self, "user_id", "admin"))
+    monkeypatch.setattr(runner, "find_seed_item", lambda client, n, t: {"Id": "seed-1", "Name": n, "Type": t})
+    monkeypatch.setattr(
+        runner,
+        "run_instance",
+        lambda client, user_id, seed: _make_dummy_instance(client.server.label, seed["Id"], original_fav=False),
+    )
+    monkeypatch.setattr(runner, "write_report", lambda p, d: (_ for _ in ()).throw(OSError("Disk write error")))
+
+    exit_code = runner.main(["--report", "/unwritable/path/report.json"])
+    assert exit_code != 0
+
+
+
+

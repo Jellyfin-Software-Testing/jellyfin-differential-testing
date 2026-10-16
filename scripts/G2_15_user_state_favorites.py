@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -237,4 +238,162 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                     instance_record["error"] = f"cleanup failure: {clean_exc}"
 
     return instance_record
+
+
+MAIN_FLOW_CHECKPOINTS = ("post_favorite", "verify_favorite", "delete_favorite", "verify_unfavorite")
+
+
+def compare_semantics(
+    v108_instance: dict[str, Any],
+    v109_instance: dict[str, Any],
+) -> tuple[bool, list[str]]:
+    """Compare the 4 main-flow checkpoints between v10.8 and v10.9 instances."""
+    diffs: list[str] = []
+    steps_108 = v108_instance.get("steps", {})
+    steps_109 = v109_instance.get("steps", {})
+
+    for checkpoint in MAIN_FLOW_CHECKPOINTS:
+        in_108 = checkpoint in steps_108
+        in_109 = checkpoint in steps_109
+
+        if not in_108 or not in_109:
+            diffs.append(
+                f"Missing checkpoint '{checkpoint}': present in v10.8={in_108}, v10.9={in_109}"
+            )
+            continue
+
+        s108 = steps_108[checkpoint]
+        s109 = steps_109[checkpoint]
+
+        # Status comparison (passed vs failed)
+        status_108 = s108.get("status")
+        status_109 = s109.get("status")
+        if status_108 != status_109:
+            diffs.append(
+                f"Checkpoint '{checkpoint}' status mismatch: v10.8={status_108}, v10.9={status_109}"
+            )
+
+        # Semantic verification step comparisons
+        if "is_favorite" in s108 or "is_favorite" in s109:
+            if s108.get("is_favorite") != s109.get("is_favorite"):
+                diffs.append(
+                    f"Checkpoint '{checkpoint}' is_favorite mismatch: "
+                    f"v10.8={s108.get('is_favorite')}, v10.9={s109.get('is_favorite')}"
+                )
+            if s108.get("in_favorites") != s109.get("in_favorites"):
+                diffs.append(
+                    f"Checkpoint '{checkpoint}' in_favorites mismatch: "
+                    f"v10.8={s108.get('in_favorites')}, v10.9={s109.get('in_favorites')}"
+                )
+
+    return len(diffs) == 0, diffs
+
+
+def write_report(path: Path | str, report_data: dict[str, Any]) -> None:
+    """Serialize the evidence report as formatted UTF-8 JSON with a trailing newline."""
+    target_path = Path(path)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(json.dumps(report_data, indent=2) + "\n", encoding="utf-8")
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--v108-url", default=os.environ.get("JELLYFIN_V108_URL", "http://localhost:8096"))
+    parser.add_argument("--v109-url", default=os.environ.get("JELLYFIN_V109_URL", "http://localhost:8097"))
+    parser.add_argument("--username", default="admin")
+    parser.add_argument("--password", default=os.environ.get("JELLYFIN_ADMIN_PASSWORD", "admin123456"))
+    parser.add_argument("--timeout", type=float, default=10.0)
+    parser.add_argument("--item-name", default=DEFAULT_ITEM_NAME)
+    parser.add_argument("--item-type", default=DEFAULT_ITEM_TYPE)
+    parser.add_argument("--g1-report", type=Path, default=None)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+
+    args = parser.parse_args(argv)
+
+    report_data: dict[str, Any] = {
+        "task": "G2-15",
+        "status": "failed",
+        "parity": "mismatched",
+        "parity_diffs": [],
+        "instances": {},
+        "error": None,
+    }
+    returncode = 1
+
+    try:
+        # Validate optional G1 report if specified
+        if args.g1_report is not None:
+            if not args.g1_report.exists():
+                raise SetupError(f"Specified G1-06 report does not exist: {args.g1_report}")
+            g1_content = json.loads(args.g1_report.read_text(encoding="utf-8"))
+            if g1_content.get("status") != "equivalent":
+                raise SetupError(
+                    f"G1-06 sanity check failed: expected status 'equivalent', got {g1_content.get('status')!r}"
+                )
+
+        clients = [
+            JellyfinClient(Server("v10.8.13", args.v108_url), args.timeout),
+            JellyfinClient(Server("v10.9.0", args.v109_url), args.timeout),
+        ]
+
+        # Authenticate and run each instance, allowing a healthy peer to run if one fails
+        for client in clients:
+            label = client.server.label
+            try:
+                client.authenticate(args.username, args.password)
+                seed = find_seed_item(client, args.item_name, args.item_type)
+                inst_res = run_instance(client, client.user_id, seed)
+                report_data["instances"][label] = inst_res
+            except Exception as inst_err:
+                report_data["instances"][label] = {
+                    "server": label,
+                    "seed_id": None,
+                    "original_state": None,
+                    "normalize_initial": None,
+                    "steps": {},
+                    "cleanup": {"status": "skipped"},
+                    "success": False,
+                    "error": str(inst_err),
+                }
+
+        # Compare parity across instances
+        inst108 = report_data["instances"].get("v10.8.13", {})
+        inst109 = report_data["instances"].get("v10.9.0", {})
+        is_eq, diffs = compare_semantics(inst108, inst109)
+        report_data["parity_diffs"] = diffs
+        report_data["parity"] = "equivalent" if is_eq else "mismatched"
+
+        all_success = (
+            inst108.get("success") is True
+            and inst109.get("success") is True
+            and is_eq
+        )
+
+        if all_success:
+            report_data["status"] = "passed"
+            returncode = 0
+        else:
+            report_data["status"] = "failed"
+            returncode = 1
+
+    except Exception as exc:
+        report_data["status"] = "failed"
+        report_data["error"] = str(exc)
+        returncode = 1
+
+    try:
+        write_report(args.report, report_data)
+    except Exception as write_err:
+        print(f"Error: Failed to write report to {args.report}: {write_err}", file=sys.stderr)
+        return 1
+
+    return returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
 
