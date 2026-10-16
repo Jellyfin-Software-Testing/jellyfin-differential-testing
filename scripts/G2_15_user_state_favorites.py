@@ -181,13 +181,14 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
 
         # 2. verify_favorite
         fav_state = read_state(client, user_id, item_id)
-        if not (fav_state["is_favorite"] and fav_state["in_favorites"]):
-            raise SetupError(f"{client.server.label}: verify_favorite failed: {fav_state}")
+        is_valid_fav = fav_state["is_favorite"] and fav_state["in_favorites"]
         instance_record["steps"]["verify_favorite"] = {
-            "status": "passed",
+            "status": "passed" if is_valid_fav else "failed",
             "is_favorite": fav_state["is_favorite"],
             "in_favorites": fav_state["in_favorites"],
         }
+        if not is_valid_fav:
+            raise SetupError(f"{client.server.label}: verify_favorite failed: {fav_state}")
 
         # 3. delete_favorite
         del_resp = favorite_request(client, FavoriteAction.UNMARK_FAVORITE, user_id, item_id)
@@ -199,13 +200,14 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
 
         # 4. verify_unfavorite
         unfav_state = read_state(client, user_id, item_id)
-        if unfav_state["is_favorite"] or unfav_state["in_favorites"]:
-            raise SetupError(f"{client.server.label}: verify_unfavorite failed: {unfav_state}")
+        is_valid_unfav = not (unfav_state["is_favorite"] or unfav_state["in_favorites"])
         instance_record["steps"]["verify_unfavorite"] = {
-            "status": "passed",
+            "status": "passed" if is_valid_unfav else "failed",
             "is_favorite": unfav_state["is_favorite"],
             "in_favorites": unfav_state["in_favorites"],
         }
+        if not is_valid_unfav:
+            raise SetupError(f"{client.server.label}: verify_unfavorite failed: {unfav_state}")
 
         instance_record["success"] = True
 
@@ -220,15 +222,22 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                 client.cleanup_phase = True
             try:
                 curr_state = read_state(client, user_id, item_id)
-                if curr_state["is_favorite"] != baseline_is_fav:
+                needs_restore = (
+                    curr_state["is_favorite"] != baseline_is_fav
+                    or curr_state["in_favorites"] != baseline_is_fav
+                )
+                if needs_restore:
                     restore_action = (
                         FavoriteAction.MARK_FAVORITE if baseline_is_fav else FavoriteAction.UNMARK_FAVORITE
                     )
                     favorite_request(client, restore_action, user_id, item_id)
                     restored_state = read_state(client, user_id, item_id)
-                    if restored_state["is_favorite"] != baseline_is_fav:
+                    if (
+                        restored_state["is_favorite"] != baseline_is_fav
+                        or restored_state["in_favorites"] != baseline_is_fav
+                    ):
                         raise SetupError(
-                            f"{client.server.label}: failed to restore baseline state to {baseline_is_fav}"
+                            f"{client.server.label}: failed to restore baseline state to {baseline_is_fav} (got {restored_state})"
                         )
                 instance_record["cleanup"] = {"status": "passed", "restored_to": baseline_is_fav}
             except Exception as clean_exc:

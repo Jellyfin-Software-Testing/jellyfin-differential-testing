@@ -532,5 +532,63 @@ def test_main_report_write_failure(monkeypatch):
     assert exit_code != 0
 
 
+def test_run_instance_preserves_failed_step_evidence():
+    runner = load_runner_module()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    seed = {"Id": target_id, "Name": "Tone", "Type": "Audio"}
+
+    # Fake client where POST succeeds but state remains unfavorited
+    class VerifyFailClient(StatefulFakeClient):
+        def request(self, method, path, **kwargs):
+            self.calls.append((method, path, kwargs.get("params")))
+            # Return 204 but don't flip is_fav to True
+            return FakeResponse(204, b"")
+
+    client = VerifyFailClient(initial_favorite=False)
+    res = runner.run_instance(client, "admin", seed)
+
+    assert res["success"] is False
+    assert "verify_favorite" in res["steps"]
+    step = res["steps"]["verify_favorite"]
+    assert step["status"] == "failed"
+    assert step["is_favorite"] is False
+    assert step["in_favorites"] is False
+
+
+def test_cleanup_detects_in_favorites_desync():
+    runner = load_runner_module()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    seed = {"Id": target_id, "Name": "Tone", "Type": "Audio"}
+
+    # Initial state is consistent (False, False).
+    # But during main flow DELETE, in_favs fails to clear and stays True.
+    # In cleanup phase, DELETE finally clears in_favs.
+    class DesyncClient(StatefulFakeClient):
+        def request(self, method, path, **kwargs):
+            self.calls.append((method, path, kwargs.get("params")))
+            if method == "DELETE":
+                if self.cleanup_phase:
+                    self.in_favs = False
+                    self.is_fav = False
+                else:
+                    # Fail to clear in_favorites during main flow
+                    self.is_fav = False
+                    self.in_favs = True
+                return FakeResponse(204, b"")
+            return super().request(method, path, **kwargs)
+
+    client = DesyncClient(initial_favorite=False)
+    res = runner.run_instance(client, "admin", seed)
+
+    # Main flow failed on verify_unfavorite because in_favorites was True
+    assert res["success"] is False
+    assert "verify_unfavorite" in res["steps"]
+    # But cleanup ran and restored in_favs to False!
+    assert client.in_favs is False
+    assert res["cleanup"]["status"] == "passed"
+
+
+
+
 
 
