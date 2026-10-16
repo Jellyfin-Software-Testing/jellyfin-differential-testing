@@ -112,7 +112,9 @@ def read_state(client: JellyfinClient, user_id: str, item_id: str) -> dict[str, 
     if not isinstance(user_data, dict):
         raise SetupError(f"{client.server.label}: item response missing UserData")
 
-    is_favorite = bool(user_data.get("IsFavorite"))
+    is_favorite = user_data.get("IsFavorite")
+    if not isinstance(is_favorite, bool):
+        raise SetupError(f"{client.server.label}: item response has no boolean UserData.IsFavorite")
 
     items = collection.get("Items")
     if not isinstance(items, list):

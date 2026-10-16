@@ -186,7 +186,7 @@ def test_request_case_preserves_invalid_json_response_context():
 
 def test_help_runs_without_contacting_servers():
     result = subprocess.run(
-        [sys.executable, "scripts/g2_13_search_hints_ddt.py", "--help"],
+        [sys.executable, "scripts/G2_13_search_hints_ddt.py", "--help"],
         check=False,
         capture_output=True,
         text=True,

@@ -190,6 +190,20 @@ def test_read_state_versioned_routes():
     assert current.calls[0] == ("GET", f"/Items/{target_id}", {"userId": "user-1"}, None)
 
 
+@pytest.mark.parametrize("raw_value", [None, "false", 0])
+def test_read_state_rejects_non_boolean_is_favorite(raw_value):
+    runner = load_runner_module()
+    client = FakeClient()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    client.queue_response(
+        FakeResponse(200, json_data={"UserData": {"IsFavorite": raw_value}})
+    )
+    client.queue_response(FakeResponse(200, json_data={"Items": []}))
+
+    with pytest.raises(SetupError, match="boolean UserData.IsFavorite"):
+        runner.read_state(client, "user-1", target_id)
+
+
 class StatefulFakeClient:
     def __init__(self, label="v10.9.0", initial_favorite=False, initial_in_favs=None, raise_on_post=False, fail_cleanup=False):
         self.server = type("Server", (), {"label": label, "base_url": f"http://{label}"})()
