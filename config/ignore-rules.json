@@ -1,81 +1,174 @@
 {
   "_metadata": {
-    "generated_by": "scripts/g2_02_mine_dynamic_fields.py",
-    "task": "G2-02",
-    "generated_at": "2026-10-08T15:29:07.077667+00:00",
-    "policy": "Strict masking over ignoring. Zero-suppression of version defects."
+    "generated_by": "Task G2-03 Configuration-Driven Rules Engine",
+    "task": "G2-03",
+    "version": "2.0.0",
+    "updated_at": "2026-10-12T10:00:00+00:00",
+    "schema_specification": {
+      "mandatory_fields": ["path", "reason", "scope", "risk"],
+      "allowed_scopes": ["global", "endpoint"],
+      "allowed_risks": ["LOW", "MEDIUM", "HIGH"]
+    },
+    "policy": "Configuration-Driven Normalization: Strict masking over ignoring. Zero-suppression of version defects."
   },
   "mask_rules": [
     {
+      "rule_id": "RULE-MASK-001",
       "path": "$.AccessToken",
+      "scope": "endpoint",
       "endpoint": "POST /Users/AuthenticateByName",
+      "action": "mask",
       "replacement": "<SESSION_TOKEN>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "Token xác thực được sinh ngẫu nhiên ở mỗi lần đăng nhập (Self-Diff v10.9=True). Bắt buộc mask để triệt tiêu nhiễu động nhưng bảo toàn kiểm tra kiểu chuỗi (string).",
+      "risk": "LOW",
+      "risk_mitigation": "Chỉ che giá trị chuỗi token, vẫn kiểm tra sự tồn tại của trường và cấu trúc DTO."
     },
     {
-      "path": "$.SessionInfo.LastActivityDate",
+      "rule_id": "RULE-MASK-002",
+      "path": "$.SessionInfo.Id",
+      "scope": "endpoint",
       "endpoint": "POST /Users/AuthenticateByName",
+      "action": "mask",
       "replacement": "<SESSION_ID>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "Session ID được cấp phát ngẫu nhiên mỗi lần tạo phiên hoạt động mới. Cần mask để tránh false positive.",
+      "risk": "LOW",
+      "risk_mitigation": "Giữ nguyên kiểm tra định dạng hex/UUID, chỉ chuẩn hóa giá trị."
     },
     {
+      "rule_id": "RULE-MASK-003",
+      "path": "$.SessionInfo.LastActivityDate",
+      "scope": "endpoint",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "action": "mask",
+      "replacement": "<TIMESTAMP>",
+      "reason": "Thời gian hoạt động của phiên thay đổi liên tục theo thời điểm thực tế của request đăng nhập.",
+      "risk": "MEDIUM",
+      "risk_mitigation": "Vẫn xác thực cấu trúc thời gian ISO 8601, chỉ che phần giá trị thời gian thực."
+    },
+    {
+      "rule_id": "RULE-MASK-004",
       "path": "$.User.LastActivityDate",
+      "scope": "endpoint",
       "endpoint": "POST /Users/AuthenticateByName",
+      "action": "mask",
       "replacement": "<TIMESTAMP>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "Cập nhật thời điểm người dùng tương tác với hệ thống tại thời điểm gửi request.",
+      "risk": "MEDIUM",
+      "risk_mitigation": "Chỉ che phần mốc thời gian, đảm bảo trường tồn tại và đúng kiểu Date."
     },
     {
+      "rule_id": "RULE-MASK-005",
       "path": "$.User.LastLoginDate",
+      "scope": "endpoint",
       "endpoint": "POST /Users/AuthenticateByName",
+      "action": "mask",
       "replacement": "<TIMESTAMP>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=True, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "Thời điểm đăng nhập gần nhất của user biến thiên theo từng lần kiểm thử xác thực.",
+      "risk": "MEDIUM",
+      "risk_mitigation": "Vẫn đối soát định dạng ISO 8601 của ngày đăng nhập."
     },
     {
+      "rule_id": "RULE-MASK-006",
       "path": "$.Items[*].MediaSources[*].TranscodingUrl",
+      "scope": "endpoint",
       "endpoint": "GET /Items",
+      "action": "mask",
       "replacement": "<STREAM_URL>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "URL streaming chứa tham số phiên phát nhạc động (PlaySessionId và DeviceId) sinh ngẫu nhiên khi gọi API.",
+      "risk": "LOW",
+      "risk_mitigation": "Giữ nguyên cấu trúc đường dẫn phát stream (/Audio/stream.mp3), chỉ mask các query param ngẫu nhiên."
     },
     {
+      "rule_id": "RULE-MASK-007",
       "path": "$.Items[*].Date",
+      "scope": "endpoint",
       "endpoint": "GET /System/ActivityLog/Entries",
+      "action": "mask",
       "replacement": "<TIMESTAMP>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "reason": "Thời điểm ghi nhận bản ghi nhật ký hệ thống thay đổi liên tục theo thời gian thực thi.",
+      "risk": "MEDIUM",
+      "risk_mitigation": "Vẫn kiểm tra định dạng thời gian của log entry."
     },
     {
+      "rule_id": "RULE-MASK-008",
       "path": "$.Items[*].Id",
+      "scope": "endpoint",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "replacement": "<UUID>",
-      "description": "Giá trị thay đổi giữa các lần gọi (Self-Diff v10.8=False, v10.9=True) dù giữ nguyên trạng thái seed. Bắt buộc mask để triệt tiêu nhiễu động nhưng giữ nguyên kiểm tra kiểu dữ liệu."
+      "action": "mask",
+      "replacement": "<LOG_ENTRY_ID>",
+      "reason": "ID tự tăng của bản ghi nhật ký hệ thống thay đổi theo số lượng thao tác phát sinh.",
+      "risk": "LOW",
+      "risk_mitigation": "Chỉ che giá trị ID, vẫn kiểm tra sự tồn tại của log entry."
+    },
+    {
+      "rule_id": "RULE-MASK-009",
+      "path": "$.ServerId",
+      "scope": "global",
+      "action": "mask",
+      "replacement": "<SERVER_ID>",
+      "reason": "Server ID là định danh duy nhất của container Docker, khác nhau giữa instance v10.8 và v10.9.",
+      "risk": "LOW",
+      "risk_mitigation": "Áp dụng toàn cục để chuẩn hóa định danh server mà không ảnh hưởng tới dữ liệu nghiệp vụ."
     }
   ],
   "format_normalization_rules": [
     {
+      "rule_id": "RULE-NORM-001",
       "path": "$.LastActivityDate",
+      "scope": "endpoint",
       "endpoint": "GET /Users/Me",
+      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+      "reason": "v10.8 dùng định dạng .NET 7 chữ số thập phân (.0000000Z), v10.9 dùng 3 chữ số miligiây (.000Z). Cần chuẩn hóa về 3 chữ số thay vì loại bỏ.",
+      "risk": "LOW",
+      "risk_mitigation": "Dữ liệu thời gian được giữ nguyên vẹn đến cấp mili-giây, không mất mát ngữ nghĩa."
     },
     {
+      "rule_id": "RULE-NORM-002",
       "path": "$.LastLoginDate",
+      "scope": "endpoint",
       "endpoint": "GET /Users/Me",
+      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+      "reason": "Cùng biểu diễn thời gian đăng nhập nhưng khác độ chính xác microsecond giữa 2 phiên bản .NET runtime.",
+      "risk": "LOW",
+      "risk_mitigation": "Chuẩn hóa định dạng chuỗi ISO 8601 mà không làm thay đổi giá trị thời gian."
     },
     {
+      "rule_id": "RULE-NORM-003",
       "path": "$[*].LastActivityDate",
+      "scope": "endpoint",
       "endpoint": "GET /Sessions",
+      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+      "reason": "Thời gian hoạt động trong danh sách sessions có sự chênh lệch số chữ số thập phân giữa v10.8 và v10.9.",
+      "risk": "LOW",
+      "risk_mitigation": "Chuẩn hóa đuôi giây về chuẩn 3 chữ số cho toàn bộ mảng sessions."
     },
     {
+      "rule_id": "RULE-NORM-004",
       "path": "$.Items[*].DateCreated",
+      "scope": "endpoint",
       "endpoint": "GET /Items",
+      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "description": "Cùng biểu diễn thời gian nhưng v10.8 dùng định dạng .NET 7 chữ số thập phân trong khi v10.9 dùng 3 chữ số miligiây. Đề xuất normalize thay vì ignore."
+      "reason": "Ngày tạo bài hát trong thư viện nhạc seed bị lệch đuôi microsecond do Entity Framework lưu trữ khác nhau.",
+      "risk": "LOW",
+      "risk_mitigation": "Bảo toàn năm-tháng-ngày-giờ-phút-giây, chỉ đồng nhất phần mili-giây."
     }
   ],
-  "ignore_rules": [],
+  "ignore_rules": [
+    {
+      "rule_id": "RULE-IGN-001",
+      "path": "$.SystemMemory",
+      "scope": "endpoint",
+      "endpoint": "GET /System/Info",
+      "action": "ignore",
+      "reason": "Bộ nhớ RAM hệ thống dao động tự nhiên theo trạng thái tải của máy chủ ảo Linux, không phản ánh chất lượng mã nguồn Jellyfin.",
+      "risk": "HIGH",
+      "risk_mitigation": "Quy tắc này chỉ loại trừ thuộc tính SystemMemory trong endpoint System Info, tuyệt đối không áp dụng cho các API media hay auth."
+    }
+  ],
   "known_differences": [
     {
       "path": "$.Id",
