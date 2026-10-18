@@ -1,0 +1,128 @@
+name: Jellyfin Differential Test CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+  pull_request:
+    branches:
+      - develop
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jellyfin-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  differential-test:
+    name: Differential Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      JELLYFIN_ADMIN_PASSWORD: ci-admin123456
+
+    steps:
+      # 1. Lấy source code của repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Cài Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # 3. Cài dependencies của framework
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      # 4. Kiểm tra Docker Compose trước khi khởi động
+      - name: Validate Docker Compose
+        run: |
+          docker compose -f docker/docker-compose.yml config --quiet
+
+      # 5. Chỉ bật các service thực sự cần cho pytest
+      - name: Start Jellyfin and Toxiproxy
+        run: |
+          docker compose -f docker/docker-compose.yml up -d \
+            jellyfin-v108 \
+            jellyfin-v109 \
+            toxiproxy
+
+          docker compose -f docker/docker-compose.yml ps
+
+      # 6. Tạo và xác minh initial state parity
+      # Đây phải chạy trước các live differential tests.
+      - name: Prepare and verify G1-06 parity
+        run: |
+          python scripts/G1_06_setup_and_verify.py
+
+      # 7. Tạo thư mục chứa evidence của chính CI run này
+      - name: Prepare CI evidence directory
+        run: |
+          mkdir -p reports/ci
+
+          {
+            echo "Commit SHA: $GITHUB_SHA"
+            echo "Branch/Ref: $GITHUB_REF"
+            echo "Run ID: $GITHUB_RUN_ID"
+            echo "Python:"
+            python --version
+            echo "Docker:"
+            docker --version
+            echo "Docker Compose:"
+            docker compose version
+          } > reports/ci/execution-manifest.txt
+
+          cp docs/evidence/G1-06-initial-state-parity.json \
+             reports/ci/G1-06-initial-state-parity.json
+
+      # 8. Chạy toàn bộ pytest tuần tự.
+      # JUnit XML lưu thời gian của từng test case.
+      - name: Run pytest
+        run: |
+          python -m pytest \
+            -n 0 \
+            --junitxml=reports/ci/pytest-junit.xml \
+            --html=reports/ci/pytest-report.html \
+            --self-contained-html
+
+      # 9. Luôn thu Docker log, kể cả khi test fail
+      - name: Collect Docker evidence
+        if: always()
+        run: |
+          mkdir -p reports/ci
+
+          docker compose -f docker/docker-compose.yml ps \
+            > reports/ci/docker-compose-ps.txt || true
+
+          docker compose -f docker/docker-compose.yml logs --no-color \
+            > reports/ci/docker-compose.log || true
+
+      # 10. Upload evidence để tải từ GitHub Actions
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jellyfin-differential-evidence-${{ github.run_number }}
+          path: reports/ci/
+          if-no-files-found: warn
+          retention-days: 14
+
+      # 11. Cleanup runner
+      - name: Stop Docker environment
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.yml down --remove-orphans
