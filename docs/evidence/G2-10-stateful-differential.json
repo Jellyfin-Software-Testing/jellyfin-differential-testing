@@ -1,0 +1,374 @@
+{
+  "task": "G2-10",
+  "status": "equivalent",
+  "steps": [
+    {
+      "name": "ADMIN_MARKS",
+      "actor": "admin",
+      "action": "POST",
+      "expected": {
+        "admin": "Favorited",
+        "user_a": "Unfavorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Favorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Favorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "ADMIN_MARKS_IDEMPOTENT",
+      "actor": "admin",
+      "action": "POST",
+      "expected": {
+        "admin": "Favorited",
+        "user_a": "Unfavorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Favorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Favorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "ADMIN_UNMARKS",
+      "actor": "admin",
+      "action": "DELETE",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Unfavorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "ADMIN_UNMARKS_IDEMPOTENT",
+      "actor": "admin",
+      "action": "DELETE",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Unfavorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "USER_A_MARKS",
+      "actor": "user_a",
+      "action": "POST",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Favorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Favorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Favorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "USER_B_MARKS",
+      "actor": "user_b",
+      "action": "POST",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Favorited",
+        "user_b": "Favorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Favorited",
+          "user_b": "Favorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Favorited",
+          "user_b": "Favorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "USER_A_UNMARKS",
+      "actor": "user_a",
+      "action": "DELETE",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Unfavorited",
+        "user_b": "Favorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Favorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Favorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    },
+    {
+      "name": "USER_B_UNMARKS",
+      "actor": "user_b",
+      "action": "DELETE",
+      "expected": {
+        "admin": "Unfavorited",
+        "user_a": "Unfavorited",
+        "user_b": "Unfavorited"
+      },
+      "responses": {
+        "v10.8.13": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "v10.9.0": {
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        }
+      },
+      "states": {
+        "v10.8.13": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        },
+        "v10.9.0": {
+          "admin": "Unfavorited",
+          "user_a": "Unfavorited",
+          "user_b": "Unfavorited"
+        }
+      },
+      "invariants": "passed",
+      "differentialCategory": null
+    }
+  ]
+}

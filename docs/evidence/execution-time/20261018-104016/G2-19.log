@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.1.1, pluggy-1.7.0 -- /media/thanhhien/Volume D2/jellyfin-differential-testing/.venv/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(PosixPath('/media/thanhhien/Volume D2/jellyfin-differential-testing/.hypothesis/examples'))
+metadata: {'Python': '3.12.3', 'Platform': 'Linux-7.0.0-38-generic-x86_64-with-glibc2.39', 'Packages': {'pytest': '8.1.1', 'pluggy': '1.7.0'}, 'Plugins': {'hypothesis': '6.100.0', 'html': '4.1.1', 'metadata': '3.1.1', 'xdist': '3.5.0'}}
+rootdir: /media/thanhhien/Volume D2/jellyfin-differential-testing
+configfile: pytest.ini
+plugins: hypothesis-6.100.0, html-4.1.1, metadata-3.1.1, xdist-3.5.0
+collecting ... collected 1 item
+
+tests/test_G2_19_resilience_toxiproxy.py::test_resilience_under_network_stress <- ../../Volume D1/jellyfin-differential-testing/tests/test_G2_19_resilience_toxiproxy.py PASSED [100%]
+
+============================== slowest durations ===============================
+1.09s call     tests/test_G2_19_resilience_toxiproxy.py::test_resilience_under_network_stress
+0.01s setup    tests/test_G2_19_resilience_toxiproxy.py::test_resilience_under_network_stress
+0.00s teardown tests/test_G2_19_resilience_toxiproxy.py::test_resilience_under_network_stress
+============================== 1 passed in 1.30s ===============================
+real 1.57
+user 0.32
+sys 0.05
