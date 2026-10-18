@@ -1,0 +1,170 @@
+{
+  "attempts": [
+    {
+      "number": 1,
+      "observed_signatures": [
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Id",
+          "v1_sha256": "11857c6239e9c39b89ab106cc2c35a2993106a233a38db7abd3952de189c5da4",
+          "v2_sha256": "276a5902484796b381da54b041f1eec89a46c6c317b358af05f79a2a3bbf476e"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.LocalAddress",
+          "v1_sha256": "afea5ae468ca9741831fae3abeb84ae9b13d872cecd8aed6a182a6bba90bb9b1",
+          "v2_sha256": "1f5896df56d5716e186bdb252ed76efa117df65ce6863655f68e5c916b54aa16"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.OperatingSystem",
+          "v1_sha256": "1ca133af50fd8cbddcc9d46be6688e37475554a0232ccd9fa0d0c7a2dee2c05a",
+          "v2_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Version",
+          "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+          "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+        }
+      ],
+      "outcome": "reproduced"
+    },
+    {
+      "number": 2,
+      "observed_signatures": [
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Id",
+          "v1_sha256": "11857c6239e9c39b89ab106cc2c35a2993106a233a38db7abd3952de189c5da4",
+          "v2_sha256": "276a5902484796b381da54b041f1eec89a46c6c317b358af05f79a2a3bbf476e"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.LocalAddress",
+          "v1_sha256": "afea5ae468ca9741831fae3abeb84ae9b13d872cecd8aed6a182a6bba90bb9b1",
+          "v2_sha256": "1f5896df56d5716e186bdb252ed76efa117df65ce6863655f68e5c916b54aa16"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.OperatingSystem",
+          "v1_sha256": "1ca133af50fd8cbddcc9d46be6688e37475554a0232ccd9fa0d0c7a2dee2c05a",
+          "v2_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Version",
+          "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+          "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+        }
+      ],
+      "outcome": "reproduced"
+    },
+    {
+      "number": 3,
+      "observed_signatures": [
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Id",
+          "v1_sha256": "11857c6239e9c39b89ab106cc2c35a2993106a233a38db7abd3952de189c5da4",
+          "v2_sha256": "276a5902484796b381da54b041f1eec89a46c6c317b358af05f79a2a3bbf476e"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.LocalAddress",
+          "v1_sha256": "afea5ae468ca9741831fae3abeb84ae9b13d872cecd8aed6a182a6bba90bb9b1",
+          "v2_sha256": "1f5896df56d5716e186bdb252ed76efa117df65ce6863655f68e5c916b54aa16"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.OperatingSystem",
+          "v1_sha256": "1ca133af50fd8cbddcc9d46be6688e37475554a0232ccd9fa0d0c7a2dee2c05a",
+          "v2_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Version",
+          "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+          "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+        }
+      ],
+      "outcome": "reproduced"
+    },
+    {
+      "number": 4,
+      "observed_signatures": [
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Id",
+          "v1_sha256": "11857c6239e9c39b89ab106cc2c35a2993106a233a38db7abd3952de189c5da4",
+          "v2_sha256": "276a5902484796b381da54b041f1eec89a46c6c317b358af05f79a2a3bbf476e"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.LocalAddress",
+          "v1_sha256": "afea5ae468ca9741831fae3abeb84ae9b13d872cecd8aed6a182a6bba90bb9b1",
+          "v2_sha256": "1f5896df56d5716e186bdb252ed76efa117df65ce6863655f68e5c916b54aa16"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.OperatingSystem",
+          "v1_sha256": "1ca133af50fd8cbddcc9d46be6688e37475554a0232ccd9fa0d0c7a2dee2c05a",
+          "v2_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Version",
+          "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+          "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+        }
+      ],
+      "outcome": "reproduced"
+    },
+    {
+      "number": 5,
+      "observed_signatures": [
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Id",
+          "v1_sha256": "11857c6239e9c39b89ab106cc2c35a2993106a233a38db7abd3952de189c5da4",
+          "v2_sha256": "276a5902484796b381da54b041f1eec89a46c6c317b358af05f79a2a3bbf476e"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.LocalAddress",
+          "v1_sha256": "afea5ae468ca9741831fae3abeb84ae9b13d872cecd8aed6a182a6bba90bb9b1",
+          "v2_sha256": "1f5896df56d5716e186bdb252ed76efa117df65ce6863655f68e5c916b54aa16"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.OperatingSystem",
+          "v1_sha256": "1ca133af50fd8cbddcc9d46be6688e37475554a0232ccd9fa0d0c7a2dee2c05a",
+          "v2_sha256": "12ae32cb1ec02d01eda3581b127c1fee3b0dc53572ed6baf239721a03d82e126"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.Version",
+          "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+          "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+        }
+      ],
+      "outcome": "reproduced"
+    }
+  ],
+  "attempts_requested": 5,
+  "failure_reproduction_rate": 1.0,
+  "invalid": 0,
+  "not_reproduced": 0,
+  "reproduced": 5,
+  "request_input_sha256": "de963ce82e87b23b75ef803699f1b0a4815298d1780d1d457e925f57c9844449",
+  "seed": 20261018,
+  "target_signature": {
+    "category": "VALUE_MISMATCH",
+    "path": "$.Version",
+    "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+    "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+  },
+  "task": "G2-23A",
+  "test_id": "G2-23A-public-version-demo",
+  "valid_runs": 5
+}
