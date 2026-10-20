@@ -509,3 +509,100 @@ def run_case(
     return case_record
 
 
+def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for G2-16 concurrency differential runner."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--v108-url", default=os.environ.get("JELLYFIN_V108_URL", "http://localhost:8096"))
+    parser.add_argument("--v109-url", default=os.environ.get("JELLYFIN_V109_URL", "http://localhost:8097"))
+    parser.add_argument("--username", default="admin")
+    parser.add_argument("--password", default=os.environ.get("JELLYFIN_ADMIN_PASSWORD", "admin123456"))
+    parser.add_argument("--timeout", type=float, default=10.0)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+
+    args = parser.parse_args(argv)
+
+    report_data: dict[str, Any] = {
+        "task": "G2-16",
+        "status": "failed",
+        "parity": False,
+        "cases": [],
+        "error": None,
+    }
+
+    clients = [
+        JellyfinClient(Server("v10.8.13", args.v108_url), args.timeout),
+        JellyfinClient(Server("v10.9.0", args.v109_url), args.timeout),
+    ]
+
+    try:
+        if not args.manifest.exists():
+            raise SetupError(f"Dataset manifest not found: {args.manifest}")
+
+        with open(args.manifest, encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        # Authenticate all clients
+        for client in clients:
+            client.authenticate(args.username, args.password)
+
+        # Discover common items
+        common_items = find_common_seed_items(clients, manifest, item_type="Audio")
+        server_labels = [c.server.label for c in clients]
+        available_count = min(len(common_items.get(lbl, [])) for lbl in server_labels) if server_labels else 0
+
+        # Run each level and each action
+        for level in CONCURRENCY_LEVELS:
+            for action in (FavoriteAction.MARK_FAVORITE, FavoriteAction.UNMARK_FAVORITE):
+                if available_count < level:
+                    report_data["cases"].append({
+                        "action": action.name,
+                        "concurrency": level,
+                        "status": "skipped_insufficient_items",
+                        "parity": None,
+                        "matched_item_names": [],
+                        "server_labels": server_labels,
+                        "error": (
+                            f"Insufficient common seed items for level {level}: "
+                            f"available {available_count}, required {level}"
+                        ),
+                        "servers": {lbl: {"requests": [], "items": {}} for lbl in server_labels},
+                    })
+                else:
+                    matched_names = [it["Name"] for it in common_items[server_labels[0]][:level]]
+                    case_res = run_case(clients, common_items, action, level)
+                    case_res["matched_item_names"] = matched_names
+                    case_res["server_labels"] = server_labels
+                    report_data["cases"].append(case_res)
+
+        # Evaluate overall parity and status
+        total_cases = len(CONCURRENCY_LEVELS) * 2
+        cases_passed = sum(1 for c in report_data["cases"] if c.get("status") == "passed")
+        all_parity = all(c.get("parity") is True for c in report_data["cases"])
+
+        report_data["parity"] = all_parity
+        if cases_passed == total_cases and all_parity:
+            report_data["status"] = "passed"
+        else:
+            report_data["status"] = "failed"
+
+    except Exception as exc:
+        report_data["status"] = "failed"
+        report_data["error"] = str(exc)
+
+    try:
+        write_report(args.report, report_data)
+    except Exception as write_err:
+        print(f"Error: Failed to write report to {args.report}: {write_err}", file=sys.stderr)
+        return 1
+
+    return 0 if report_data["status"] == "passed" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+

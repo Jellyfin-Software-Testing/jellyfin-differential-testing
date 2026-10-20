@@ -530,3 +530,224 @@ def test_run_case_cleanup_failure_continues_restoring_later_items():
     assert items_108[ID_2]["cleanup"] == "passed"
 
 
+def test_main_full_success(monkeypatch, tmp_path):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    # Mock client and find_common_seed_items and run_case
+    c108 = StatefulItemClient("v10.8.13")
+    c109 = StatefulItemClient("v10.9.0")
+
+    monkeypatch.setattr(runner, "JellyfinClient", lambda server, timeout: c108 if "10.8" in server.label else c109)
+    # Give them authenticate method
+    c108.authenticate = lambda u, p: None
+    c109.authenticate = lambda u, p: None
+
+    # Provide 100 fake items
+    seed_items = {
+        "v10.8.13": [{"Id": f"id-108-{i}", "Name": f"Tone {i:03d}", "Type": "Audio"} for i in range(100)],
+        "v10.9.0": [{"Id": f"id-109-{i}", "Name": f"Tone {i:03d}", "Type": "Audio"} for i in range(100)],
+    }
+    monkeypatch.setattr(runner, "find_common_seed_items", lambda clients, manifest, item_type: seed_items)
+
+    executed_cases = []
+    def fake_run_case(clients, items_by_server, action, concurrency):
+        executed_cases.append((action, concurrency))
+        return {
+            "action": action.name,
+            "concurrency": concurrency,
+            "status": "passed",
+            "parity": True,
+            "error": None,
+            "servers": {c.server.label: {"requests": [], "items": {}} for c in clients},
+        }
+
+    monkeypatch.setattr(runner, "run_case", fake_run_case)
+
+    exit_code = runner.main([
+        "--v108-url", "http://fake-108",
+        "--v109-url", "http://fake-109",
+        "--report", str(report_file),
+    ])
+
+    assert exit_code == 0
+    assert report_file.exists()
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["task"] == "G2-16"
+    assert report["status"] == "passed"
+    assert report["parity"] is True
+    # 4 levels x 2 actions = 8 cases
+    assert len(executed_cases) == 8
+    assert len(report["cases"]) == 8
+
+
+def test_main_insufficient_items_skips_and_exits_nonzero(monkeypatch, tmp_path):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    c108 = StatefulItemClient("v10.8.13")
+    c109 = StatefulItemClient("v10.9.0")
+    c108.authenticate = lambda u, p: None
+    c109.authenticate = lambda u, p: None
+
+    monkeypatch.setattr(runner, "JellyfinClient", lambda server, timeout: c108 if "10.8" in server.label else c109)
+
+    # Only 50 items available
+    seed_items = {
+        "v10.8.13": [{"Id": f"id-108-{i}", "Name": f"Tone {i:03d}", "Type": "Audio"} for i in range(50)],
+        "v10.9.0": [{"Id": f"id-109-{i}", "Name": f"Tone {i:03d}", "Type": "Audio"} for i in range(50)],
+    }
+    monkeypatch.setattr(runner, "find_common_seed_items", lambda clients, manifest, item_type: seed_items)
+
+    executed_cases = []
+    def fake_run_case(clients, items_by_server, action, concurrency):
+        executed_cases.append((action, concurrency))
+        return {
+            "action": action.name,
+            "concurrency": concurrency,
+            "status": "passed",
+            "parity": True,
+            "error": None,
+            "servers": {c.server.label: {"requests": [], "items": {}} for c in clients},
+        }
+
+    monkeypatch.setattr(runner, "run_case", fake_run_case)
+
+    exit_code = runner.main(["--report", str(report_file)])
+
+    assert exit_code != 0
+    assert report_file.exists()
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+
+    # Level 100 must be marked skipped_insufficient_items and not executed
+    assert (FavoriteAction.MARK_FAVORITE, 100) not in executed_cases
+    assert (FavoriteAction.UNMARK_FAVORITE, 100) not in executed_cases
+
+    skipped = [c for c in report["cases"] if c.get("status") == "skipped_insufficient_items"]
+    assert len(skipped) == 2  # MARK and UNMARK for level 100
+
+
+def test_main_auth_failure_writes_error_report(monkeypatch, tmp_path):
+    runner = load_runner_module()
+    report_file = tmp_path / "evidence.json"
+
+    c108 = StatefulItemClient("v10.8.13")
+    c108.authenticate = lambda u, p: (_ for _ in ()).throw(SetupError("Invalid credentials"))
+    monkeypatch.setattr(runner, "JellyfinClient", lambda server, timeout: c108)
+
+    exit_code = runner.main(["--report", str(report_file)])
+
+    assert exit_code == 1
+    assert report_file.exists()
+    report = json.loads(report_file.read_text(encoding="utf-8"))
+    assert report["status"] == "failed"
+    assert "Invalid credentials" in report["error"]
+
+
+def test_main_report_write_error_returns_nonzero(monkeypatch, tmp_path):
+    runner = load_runner_module()
+    c108 = StatefulItemClient("v10.8.13")
+    c109 = StatefulItemClient("v10.9.0")
+    c108.authenticate = lambda u, p: None
+    c109.authenticate = lambda u, p: None
+
+    monkeypatch.setattr(runner, "JellyfinClient", lambda server, timeout: c108 if "10.8" in server.label else c109)
+    monkeypatch.setattr(runner, "find_common_seed_items", lambda clients, manifest, item_type: {
+        "v10.8.13": [{"Id": f"id-{i}", "Name": f"Tone {i}", "Type": "Audio"} for i in range(100)],
+        "v10.9.0": [{"Id": f"id-{i}", "Name": f"Tone {i}", "Type": "Audio"} for i in range(100)],
+    })
+    monkeypatch.setattr(runner, "run_case", lambda clients, items, action, level: {
+        "action": action.name, "concurrency": level, "status": "passed", "parity": True, "error": None,
+        "servers": {c.server.label: {"requests": [], "items": {}} for c in clients},
+    })
+    monkeypatch.setattr(runner, "write_report", lambda path, data: (_ for _ in ()).throw(IOError("Disk full")))
+
+    exit_code = runner.main(["--report", str(tmp_path / "never.json")])
+    assert exit_code != 0
+
+
+def test_run_case_request_error_and_cleanup_error_coexist():
+    runner = load_runner_module()
+    init_108 = {
+        ID_1: {"is_favorite": False, "in_favorites": False},
+    }
+    init_109 = {
+        ID_1: {"is_favorite": False, "in_favorites": False},
+    }
+    c108 = StatefulItemClient("v10.8.13", initial_states=init_108)
+    c109 = StatefulItemClient("v10.9.0", initial_states=init_109)
+
+    # Fail request on 108
+    def failing_req(method, path, **kwargs):
+        if "FavoriteItems" in path:
+            raise SetupError("Batch mutation exploded")
+        return FakeResponse(204, b"")
+
+    c108.request = failing_req
+    # Also fail cleanup
+    c108.fail_cleanup_ids.add(ID_1)
+
+    items_by_server = {
+        "v10.8.13": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+        "v10.9.0": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+    }
+
+    res = runner.run_case([c108, c109], items_by_server, FavoriteAction.MARK_FAVORITE, concurrency=1)
+    assert res["status"] == "failed"
+    reqs_108 = res["servers"]["v10.8.13"]["requests"]
+    assert reqs_108[0]["status"] == "failed"
+    assert "Batch mutation exploded" in reqs_108[0]["error"]
+
+    items_108 = res["servers"]["v10.8.13"]["items"]
+    assert items_108[ID_1]["cleanup"] == "failed"
+    assert items_108[ID_1]["cleanup_error"] is not None
+
+
+def test_run_case_cleanup_readback_mismatch_fails():
+    runner = load_runner_module()
+    init_108 = {
+        ID_1: {"is_favorite": False, "in_favorites": False},
+    }
+    init_109 = {
+        ID_1: {"is_favorite": False, "in_favorites": False},
+    }
+    c108 = StatefulItemClient("v10.8.13", initial_states=init_108)
+    c109 = StatefulItemClient("v10.9.0", initial_states=init_109)
+
+    c108.in_cleanup = False
+    original_json = c108.json
+    def broken_cleanup_json(method, path, **kwargs):
+        data = original_json(method, path, **kwargs)
+        if getattr(c108, "in_cleanup", False):
+            if "UserData" in data:
+                data["UserData"]["IsFavorite"] = True
+            elif "Items" in data:
+                data["Items"] = [{"Id": ID_1}]
+        return data
+
+    c108.json = broken_cleanup_json
+
+    # When request is DELETE (which happens in cleanup to restore False):
+    original_request = c108.request
+    def tracking_request(method, path, **kwargs):
+        if method == "DELETE" and len(c108.mutations) > 0:
+            c108.in_cleanup = True
+        return original_request(method, path, **kwargs)
+
+    c108.request = tracking_request
+
+    items_by_server = {
+        "v10.8.13": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+        "v10.9.0": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+    }
+
+    res = runner.run_case([c108, c109], items_by_server, FavoriteAction.MARK_FAVORITE, concurrency=1)
+    assert res["status"] == "failed"
+    item_108 = res["servers"]["v10.8.13"]["items"][ID_1]
+    assert item_108["cleanup"] == "failed"
+    assert "Restored state mismatch" in item_108["cleanup_error"]
+
+
+
+
