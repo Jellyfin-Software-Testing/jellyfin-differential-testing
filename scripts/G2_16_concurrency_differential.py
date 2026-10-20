@@ -321,6 +321,7 @@ def run_case(
                 case_record["servers"][label]["items"][item_id] = {
                     "original": orig_state,
                     "final": None,
+                    "verification_error": None,
                     "cleanup": "not_needed",
                     "cleanup_state": None,
                     "cleanup_error": None,
@@ -367,7 +368,7 @@ def run_case(
 
         # Phase 4: Post-batch verification
         expected_final = (action == FavoriteAction.MARK_FAVORITE)
-        verification_failed = False
+        verification_errors: list[str] = []
 
         for client in clients:
             label = client.server.label
@@ -376,17 +377,28 @@ def run_case(
 
             for item in targets:
                 item_id = item["Id"]
-                final_state = read_state(client, user_id, item_id)
+                item_record = case_record["servers"][label]["items"][item_id]
+                try:
+                    final_state = read_state(client, user_id, item_id)
+                except Exception as exc:
+                    item_record["verification_error"] = str(exc)
+                    verification_errors.append(f"{label} {item['Name']} ({item_id}): {exc}")
+                    continue
+
                 case_record["servers"][label]["items"][item_id]["final"] = final_state
 
                 if (
                     final_state["is_favorite"] != expected_final
                     or final_state["in_favorites"] != expected_final
                 ):
-                    verification_failed = True
+                    verification_errors.append(
+                        f"{label} {item['Name']} ({item_id}): unexpected state {final_state}"
+                    )
 
-        if verification_failed:
-            case_record["error"] = "One or more items failed post-batch state verification"
+        if verification_errors:
+            case_record["error"] = (
+                "Post-batch state verification failed: " + "; ".join(verification_errors)
+            )
 
     except Exception as exc:
         case_record["error"] = str(exc)

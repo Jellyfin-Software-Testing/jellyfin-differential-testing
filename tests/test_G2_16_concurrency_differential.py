@@ -454,6 +454,62 @@ def test_run_case_unmark_favorite_lifecycle():
     assert items_record[ID_2]["final"]["is_favorite"] is False
 
 
+def test_run_case_continues_verifying_after_item_readback_error(monkeypatch):
+    runner = load_runner_module()
+    initial = {
+        ID_1: {"is_favorite": False, "in_favorites": False},
+        ID_2: {"is_favorite": False, "in_favorites": False},
+    }
+    c108 = StatefulItemClient("v10.8.13", initial_states=initial)
+    c109 = StatefulItemClient("v10.9.0", initial_states=initial)
+    items_by_server = {
+        "v10.8.13": [
+            {"Id": ID_1, "Name": "Tone 1", "Type": "Audio"},
+            {"Id": ID_2, "Name": "Tone 2", "Type": "Audio"},
+        ],
+        "v10.9.0": [
+            {"Id": ID_1, "Name": "Tone 1", "Type": "Audio"},
+            {"Id": ID_2, "Name": "Tone 2", "Type": "Audio"},
+        ],
+    }
+
+    original_read_state = runner.read_state
+    original_run_batch = runner.run_concurrent_batch
+    batch_finished = False
+    failed_reads = set()
+
+    def run_batch_then_mark_finished(*args, **kwargs):
+        nonlocal batch_finished
+        result = original_run_batch(*args, **kwargs)
+        batch_finished = True
+        return result
+
+    def fail_first_post_batch_read_for_first_item(client, user_id, item_id):
+        key = (client.server.label, item_id)
+        if batch_finished and item_id == ID_1 and key not in failed_reads:
+            failed_reads.add(key)
+            raise SetupError("simulated post-batch readback failure")
+        return original_read_state(client, user_id, item_id)
+
+    monkeypatch.setattr(runner, "run_concurrent_batch", run_batch_then_mark_finished)
+    monkeypatch.setattr(runner, "read_state", fail_first_post_batch_read_for_first_item)
+
+    result = runner.run_case(
+        [c108, c109], items_by_server, FavoriteAction.MARK_FAVORITE, concurrency=2
+    )
+
+    assert result["status"] == "failed"
+    for label in ("v10.8.13", "v10.9.0"):
+        item_records = result["servers"][label]["items"]
+        assert "simulated post-batch readback failure" in item_records[ID_1]["verification_error"]
+        assert item_records[ID_2]["final"] == {
+            "is_favorite": True,
+            "in_favorites": True,
+        }
+        assert item_records[ID_2]["verification_error"] is None
+        assert all(item["cleanup"] == "passed" for item in item_records.values())
+
+
 def test_run_case_preflight_inconsistency_aborts_without_writes():
     runner = load_runner_module()
     # Inconsistent initial state on ID_1
