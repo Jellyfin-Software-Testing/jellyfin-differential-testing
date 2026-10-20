@@ -749,5 +749,73 @@ def test_run_case_cleanup_readback_mismatch_fails():
     assert "Restored state mismatch" in item_108["cleanup_error"]
 
 
+def test_run_case_cleanup_error_appended_when_verification_error_present():
+    runner = load_runner_module()
+    init_108 = {ID_1: {"is_favorite": False, "in_favorites": False}}
+    init_109 = {ID_1: {"is_favorite": False, "in_favorites": False}}
+    c108 = StatefulItemClient("v10.8.13", initial_states=init_108)
+    c109 = StatefulItemClient("v10.9.0", initial_states=init_109)
+
+    # During batch, don't update state to True -> causes post-batch verification failure
+    # During cleanup, raise error -> causes cleanup failure
+    def mock_request(method, path, **kwargs):
+        if method == "POST":
+            return FakeResponse(204, b"")
+        if method == "DELETE":
+            raise SetupError("Cleanup restore exploded")
+        return FakeResponse(204, b"")
+
+    c108.request = mock_request
+
+    items_by_server = {
+        "v10.8.13": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+        "v10.9.0": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+    }
+
+    res = runner.run_case([c108, c109], items_by_server, FavoriteAction.MARK_FAVORITE, concurrency=1)
+    assert res["status"] == "failed"
+    assert res["error"] is not None
+    # Must contain both the verification failure and the cleanup failure
+    assert "verification" in res["error"].lower()
+    assert "cleanup failed" in res["error"].lower()
+    assert "cleanup restore exploded" in res["error"].lower()
+
+
+def test_run_case_populates_error_on_batch_request_failure():
+    runner = load_runner_module()
+    init_108 = {ID_1: {"is_favorite": False, "in_favorites": False}}
+    init_109 = {ID_1: {"is_favorite": False, "in_favorites": False}}
+    c108 = StatefulItemClient("v10.8.13", initial_states=init_108)
+    c109 = StatefulItemClient("v10.9.0", initial_states=init_109)
+
+    # Mock batch runner to return failed request, but verification somehow passes
+    original_run_batch = runner.run_concurrent_batch
+    def failed_batch(clients, items, action, concurrency):
+        return {
+            "servers": {
+                "v10.8.13": {"requests": [{"item_id": ID_1, "item_name": "Tone 1", "status": "failed", "response": None, "error": "HTTP 500"}]},
+                "v10.9.0": {"requests": [{"item_id": ID_1, "item_name": "Tone 1", "status": "passed", "response": None, "error": None}]},
+            }
+        }
+    runner.run_concurrent_batch = failed_batch
+
+    items_by_server = {
+        "v10.8.13": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+        "v10.9.0": [{"Id": ID_1, "Name": "Tone 1", "Type": "Audio"}],
+    }
+
+    try:
+        # Pre-set states to True so verification passes
+        c108.states[ID_1] = {"is_favorite": True, "in_favorites": True}
+        c109.states[ID_1] = {"is_favorite": True, "in_favorites": True}
+        res = runner.run_case([c108, c109], items_by_server, FavoriteAction.MARK_FAVORITE, concurrency=1)
+        assert res["status"] == "failed"
+        assert res["error"] is not None
+        assert "request" in res["error"].lower() or "batch" in res["error"].lower()
+    finally:
+        runner.run_concurrent_batch = original_run_batch
+
+
+
 
 

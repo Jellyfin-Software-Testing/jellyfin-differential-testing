@@ -444,8 +444,12 @@ def run_case(
                     case_record["servers"][label]["items"][item_id]["cleanup_state"] = cleanup_state
                     case_record["servers"][label]["items"][item_id]["cleanup_error"] = restore_error
 
-            if cleanup_errors and not case_record["error"]:
-                case_record["error"] = f"Cleanup failed on {len(cleanup_errors)} item(s): {'; '.join(cleanup_errors)}"
+            if cleanup_errors:
+                cleanup_msg = f"Cleanup failed on {len(cleanup_errors)} item(s): {'; '.join(cleanup_errors)}"
+                if case_record["error"]:
+                    case_record["error"] = f"{case_record['error']}; {cleanup_msg}"
+                else:
+                    case_record["error"] = cleanup_msg
 
     # Phase 6: Parity and overall status
     labels = [c.server.label for c in clients]
@@ -495,6 +499,13 @@ def run_case(
             if any(info.get("cleanup") != "passed" for info in items.values()):
                 all_cleanups_passed = False
                 break
+
+    if not all_requests_passed and not case_record["error"]:
+        case_record["error"] = "One or more concurrent batch requests failed"
+    elif not parity_ok and not case_record["error"]:
+        case_record["error"] = "Differential parity mismatch across server versions"
+    elif writes_attempted and not all_cleanups_passed and not case_record["error"]:
+        case_record["error"] = "One or more items failed cleanup"
 
     if (
         case_record["error"] is None
