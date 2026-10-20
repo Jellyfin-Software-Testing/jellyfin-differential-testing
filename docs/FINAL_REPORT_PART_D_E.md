@@ -8,7 +8,7 @@
 ## PHẦN D: CHIẾN LƯỢC KIỂM THỬ (TEST STRATEGY)
 
 ### D.1. Lý Thuyết K14 Differential Testing (Định Hướng Kiểm Thử Sai Biệt)
-Kiểm thử sai biệt (Differential Testing - K14) là phương pháp phát hiện lỗi nâng cao dựa trên nguyên lý so sánh hành vi đầu ra (Responses) của hai hay nhiều hệ thống tương đương khi nhận cùng một tập dữ liệu đầu vào ($I$).
+Kiểm thử sai biệt (Differential Testing - K14) là phương pháp phát hiện lỗi nâng cao bằng cách thực thi đồng thời cùng một tập dữ liệu đầu vào $I$ trên hai hoặc nhiều phiên bản của hệ thống (Jellyfin v10.8 vs Jellyfin v10.9) và so sánh sự khác biệt trong kết quả đầu ra (Responses).
 
 1. **Khái niệm Pseudo-Oracle**:
    Trong các hệ thống phức tạp như Jellyfin, việc xây dựng một Oracle thủ công để dự đoán chính xác phản hồi JSON cho hàng ngàn endpoint là không khả thi. Dự án sử dụng phiên bản **Jellyfin v10.8.13** làm *Pseudo-Oracle* (Oracle giả định) để đối chứng hành vi trực tiếp với phiên bản mục tiêu **Jellyfin v10.9.0**.
