@@ -48,9 +48,10 @@ def _get_guid_candidates(val: str | bytes) -> list[Any]:
     return result
 
 
-def _open_ro(path: Path) -> sqlite3.Connection:
+def _open_ro(path: Path, timeout: float = 0.5) -> sqlite3.Connection:
     uri = f"{path.resolve().as_uri()}?mode=ro"
-    return sqlite3.connect(uri, uri=True, isolation_level=None)
+    return sqlite3.connect(uri, uri=True, isolation_level=None, timeout=timeout)
+
 
 
 def validate_favorite_state(
@@ -61,6 +62,24 @@ def validate_favorite_state(
     api_state: dict[str, bool],
 ) -> dict[str, Any]:
     """Validate that API favorite observations match persistent UserDatas in SQLite."""
+    return _do_validate_favorite_state(
+        jellyfin_db_path,
+        library_db_path,
+        user_id,
+        item_id,
+        api_state,
+        use_nolock_on_locked=False,
+    )
+
+
+def _do_validate_favorite_state(
+    jellyfin_db_path: Path,
+    library_db_path: Path,
+    user_id: str,
+    item_id: str,
+    api_state: dict[str, bool],
+    use_nolock_on_locked: bool = False,
+) -> dict[str, Any]:
     row_counts: dict[str, int | None] = {
         "user_by_id": None,
         "item_by_guid": None,
@@ -155,7 +174,11 @@ def validate_favorite_state(
 
     # 2. Open library.db once with single read transaction
     try:
-        con_lib = _open_ro(library_db_path)
+        if use_nolock_on_locked:
+            uri = f"{library_db_path.resolve().as_uri()}?mode=ro&nolock=1"
+            con_lib = sqlite3.connect(uri, uri=True, isolation_level=None)
+        else:
+            con_lib = _open_ro(library_db_path)
     except (sqlite3.DatabaseError, OSError) as exc:
         return {
             "passed": False,
@@ -302,6 +325,24 @@ def validate_favorite_state(
 
     except sqlite3.OperationalError as exc:
         err_msg = str(exc).lower()
+        if "locked" in err_msg and not use_nolock_on_locked:
+            wal_path = library_db_path.parent / f"{library_db_path.name}-wal"
+            if not wal_path.exists():
+                # Retry with nolock=1 on non-WAL database held under POSIX lock
+                if in_transaction:
+                    try:
+                        con_lib.execute("ROLLBACK")
+                    except Exception:
+                        pass
+                con_lib.close()
+                return _do_validate_favorite_state(
+                    jellyfin_db_path,
+                    library_db_path,
+                    user_id,
+                    item_id,
+                    api_state,
+                    use_nolock_on_locked=True,
+                )
         code = "DB_SCHEMA_ERROR" if "no such" in err_msg else "DB_READ_ERROR"
         return {
             "passed": False,
@@ -329,6 +370,7 @@ def validate_favorite_state(
             except Exception:
                 pass
         con_lib.close()
+
 
     # Compare API observations with DB
     api_is_fav = api_state.get("is_favorite")
