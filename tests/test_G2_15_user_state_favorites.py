@@ -18,7 +18,27 @@ def load_runner_module():
     assert spec.loader is not None
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
+
+    def _default_val(jdb, ldb, user_id, item_id, api_state):
+        return {
+            "passed": True,
+            "internal_id": 1,
+            "user_data_key": f"key-{item_id}",
+            "row_counts": {
+                "user_by_id": 1,
+                "item_by_guid": 1,
+                "items_by_user_data_key": 1,
+                "user_data": 1,
+            },
+            "db_is_favorite": api_state.get("is_favorite"),
+            "mismatch_codes": [],
+            "error": None,
+        }
+
+    module.validate_favorite_state = _default_val
     return module
+
+
 
 
 class FakeResponse:
@@ -600,6 +620,157 @@ def test_cleanup_detects_in_favorites_desync():
     # But cleanup ran and restored in_favs to False!
     assert client.in_favs is False
     assert res["cleanup"]["status"] == "passed"
+
+
+@pytest.mark.parametrize("initial_fav", [False, True])
+def test_run_instance_records_db_validation_for_lifecycle_states(monkeypatch, initial_fav):
+    runner = load_runner_module()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    seed = {"Id": target_id, "Name": "Tone", "Type": "Audio"}
+    client = StatefulFakeClient(initial_favorite=initial_fav)
+
+    val_calls = []
+
+    def mock_val(jdb, ldb, user_id, item_id, api_state):
+        val_calls.append((jdb, ldb, user_id, item_id, dict(api_state)))
+        return {
+            "passed": True,
+            "internal_id": 1,
+            "user_data_key": "k1",
+            "row_counts": {
+                "user_by_id": 1,
+                "item_by_guid": 1,
+                "items_by_user_data_key": 1,
+                "user_data": 1,
+            },
+            "db_is_favorite": api_state["is_favorite"],
+            "mismatch_codes": [],
+            "error": None,
+        }
+
+    monkeypatch.setattr(runner, "validate_favorite_state", mock_val)
+    fake_paths = {"v10.9.0": (Path("/tmp/jdb"), Path("/tmp/ldb"))}
+    monkeypatch.setattr(runner, "DB_PATHS_BY_VERSION", fake_paths)
+
+    res = runner.run_instance(client, "admin", seed)
+    assert res["success"] is True
+    assert "db_validation" in res
+
+    recorded_steps = [v["step"] for v in res["db_validation"]]
+    if initial_fav:
+        assert recorded_steps == [
+            "initial_state",
+            "normalize_initial",
+            "verify_favorite",
+            "verify_unfavorite",
+            "cleanup",
+        ]
+    else:
+        assert recorded_steps == [
+            "initial_state",
+            "verify_favorite",
+            "verify_unfavorite",
+            "cleanup",
+        ]
+
+    for v in res["db_validation"]:
+        assert v["passed"] is True
+        assert v["internal_id"] == 1
+        assert v["user_data_key"] == "k1"
+
+
+def test_db_validation_failure_marks_instance_failed_and_cleanup_restores(monkeypatch):
+    runner = load_runner_module()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    seed = {"Id": target_id, "Name": "Tone", "Type": "Audio"}
+    client = StatefulFakeClient(initial_favorite=False)
+
+    def mock_val(jdb, ldb, user_id, item_id, api_state):
+        if api_state["is_favorite"] is True:
+            return {
+                "passed": False,
+                "internal_id": 1,
+                "user_data_key": "k1",
+                "row_counts": {"user_by_id": 1, "item_by_guid": 1, "items_by_user_data_key": 1, "user_data": 1},
+                "db_is_favorite": False,
+                "mismatch_codes": ["API_ITEM_DB_MISMATCH", "API_COLLECTION_DB_MISMATCH"],
+                "error": None,
+            }
+        return {
+            "passed": True,
+            "internal_id": 1,
+            "user_data_key": "k1",
+            "row_counts": {"user_by_id": 1, "item_by_guid": 1, "items_by_user_data_key": 1, "user_data": 1},
+            "db_is_favorite": False,
+            "mismatch_codes": [],
+            "error": None,
+        }
+
+    monkeypatch.setattr(runner, "validate_favorite_state", mock_val)
+    fake_paths = {"v10.9.0": (Path("/tmp/jdb"), Path("/tmp/ldb"))}
+    monkeypatch.setattr(runner, "DB_PATHS_BY_VERSION", fake_paths)
+
+    res = runner.run_instance(client, "admin", seed)
+    assert res["success"] is False
+    assert res["cleanup"]["status"] == "passed"
+    assert client.is_fav is False
+    assert any(v["passed"] is False for v in res["db_validation"])
+
+
+def test_cleanup_db_validation_failure_keeps_instance_failed(monkeypatch):
+    runner = load_runner_module()
+    target_id = "758cdd37-3443-3b1b-c7c6-213a5c7179f2"
+    seed = {"Id": target_id, "Name": "Tone", "Type": "Audio"}
+    client = StatefulFakeClient(initial_favorite=False)
+
+    def mock_val(jdb, ldb, user_id, item_id, api_state):
+        if client.cleanup_phase:
+            return {
+                "passed": False,
+                "internal_id": 1,
+                "user_data_key": "k1",
+                "row_counts": {"user_by_id": 1, "item_by_guid": 1, "items_by_user_data_key": 1, "user_data": 1},
+                "db_is_favorite": None,
+                "mismatch_codes": [],
+                "error": {"code": "DB_READ_ERROR", "stage": "user_data_lookup", "message": "disk failure"},
+            }
+        return {
+            "passed": True,
+            "internal_id": 1,
+            "user_data_key": "k1",
+            "row_counts": {"user_by_id": 1, "item_by_guid": 1, "items_by_user_data_key": 1, "user_data": 1},
+            "db_is_favorite": api_state["is_favorite"],
+            "mismatch_codes": [],
+            "error": None,
+        }
+
+    monkeypatch.setattr(runner, "validate_favorite_state", mock_val)
+    fake_paths = {"v10.9.0": (Path("/tmp/jdb"), Path("/tmp/ldb"))}
+    monkeypatch.setattr(runner, "DB_PATHS_BY_VERSION", fake_paths)
+
+    res = runner.run_instance(client, "admin", seed)
+    assert res["success"] is False
+    assert res["cleanup"]["status"] == "failed"
+    assert any(v["step"] == "cleanup" and v["passed"] is False for v in res["db_validation"])
+
+
+def test_read_state_does_not_call_db_validator(monkeypatch):
+    runner = load_runner_module()
+    client = StatefulFakeClient(initial_favorite=False)
+
+    called = False
+
+    def mock_val(*args, **kwargs):
+        nonlocal called
+        called = True
+        return {"passed": True}
+
+    monkeypatch.setattr(runner, "validate_favorite_state", mock_val, raising=False)
+
+    state = runner.read_state(client, "admin", "item-1")
+    assert state == {"is_favorite": False, "in_favorites": False}
+    assert called is False
+
 
 
 
