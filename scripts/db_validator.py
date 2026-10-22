@@ -326,7 +326,8 @@ def _do_validate_favorite_state(
     except sqlite3.OperationalError as exc:
         err_msg = str(exc).lower()
         if "locked" in err_msg and not use_nolock_on_locked:
-            wal_path = library_db_path.parent / f"{library_db_path.name}-wal"
+            resolved_lib = library_db_path.resolve()
+            wal_path = resolved_lib.parent / f"{resolved_lib.name}-wal"
             if not wal_path.exists():
                 # Retry with nolock=1 on non-WAL database held under POSIX lock
                 if in_transaction:
@@ -334,7 +335,9 @@ def _do_validate_favorite_state(
                         con_lib.execute("ROLLBACK")
                     except Exception:
                         pass
+                    in_transaction = False
                 con_lib.close()
+                con_lib = None
                 return _do_validate_favorite_state(
                     jellyfin_db_path,
                     library_db_path,
@@ -364,12 +367,16 @@ def _do_validate_favorite_state(
             "error": {"code": "DB_READ_ERROR", "stage": "library_lookup", "message": str(exc)},
         }
     finally:
-        if in_transaction:
+        if con_lib is not None:
+            if in_transaction:
+                try:
+                    con_lib.execute("ROLLBACK")
+                except Exception:
+                    pass
             try:
-                con_lib.execute("ROLLBACK")
+                con_lib.close()
             except Exception:
                 pass
-        con_lib.close()
 
 
     # Compare API observations with DB

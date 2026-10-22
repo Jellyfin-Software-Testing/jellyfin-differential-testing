@@ -422,3 +422,88 @@ def test_library_lookups_share_one_read_transaction(tmp_path: Path, monkeypatch)
         commit_idx = op_types.index("COMMIT")
         for s_idx in select_indices:
             assert s_idx < commit_idx, "Queries must be executed before COMMIT"
+
+
+def test_locked_non_wal_db_retries_with_nolock(tmp_path: Path):
+    jdb, ldb = create_fixture_dbs(tmp_path)
+    with sqlite3.connect(str(jdb)) as con:
+        con.execute('INSERT INTO Users ("Id", "InternalId") VALUES ("u1", 10)')
+        con.commit()
+    with sqlite3.connect(str(ldb)) as con:
+        con.execute("PRAGMA journal_mode = DELETE;")
+        con.execute("INSERT INTO TypedBaseItems (guid, UserDataKey) VALUES ('i1', 'k1')")
+        con.execute("INSERT INTO UserDatas (key, userId, isFavorite) VALUES ('k1', 10, 1)")
+        con.commit()
+
+    wal_file = ldb.parent / f"{ldb.name}-wal"
+    assert not wal_file.exists(), "Must be non-WAL database"
+
+    # Hold an exclusive lock on library.db
+    lock_conn = sqlite3.connect(str(ldb), isolation_level=None)
+    try:
+        lock_conn.execute("PRAGMA locking_mode = EXCLUSIVE;")
+        lock_conn.execute("BEGIN EXCLUSIVE;")
+
+        res = validate_favorite_state(
+            jdb, ldb, "u1", "i1", {"is_favorite": True, "in_favorites": True}
+        )
+        assert res["passed"] is True
+        assert res["db_is_favorite"] is True
+        assert res["error"] is None
+    finally:
+        try:
+            lock_conn.execute("ROLLBACK;")
+        except Exception:
+            pass
+        lock_conn.close()
+
+
+def test_locked_wal_db_does_not_retry_with_nolock(tmp_path: Path, monkeypatch):
+    import scripts.db_validator
+
+    jdb, ldb = create_fixture_dbs(tmp_path)
+    with sqlite3.connect(str(jdb)) as con:
+        con.execute('INSERT INTO Users ("Id", "InternalId") VALUES ("u1", 10)')
+        con.commit()
+    with sqlite3.connect(str(ldb)) as con:
+        con.execute("PRAGMA journal_mode = WAL;")
+        con.execute("INSERT INTO TypedBaseItems (guid, UserDataKey) VALUES ('i1', 'k1')")
+        con.execute("INSERT INTO UserDatas (key, userId, isFavorite) VALUES ('k1', 10, 1)")
+        con.commit()
+
+    # Ensure WAL file exists on disk
+    wal_file = ldb.parent / f"{ldb.name}-wal"
+    wal_file.write_bytes(b"mock-wal-sidecar")
+
+    real_open_ro = scripts.db_validator._open_ro
+
+    class LockingConnectionProxy:
+        def __init__(self, conn):
+            self._conn = conn
+
+        def execute(self, sql, *args, **kwargs):
+            if str(sql).strip().upper() == "BEGIN":
+                raise sqlite3.OperationalError("database is locked")
+            return self._conn.execute(sql, *args, **kwargs)
+
+        def close(self):
+            return self._conn.close()
+
+        def __getattr__(self, name):
+            return getattr(self._conn, name)
+
+    def mock_open_ro(path):
+        conn = real_open_ro(path)
+        if "library.db" in str(path):
+            return LockingConnectionProxy(conn)
+        return conn
+
+    monkeypatch.setattr(scripts.db_validator, "_open_ro", mock_open_ro)
+
+    res = validate_favorite_state(
+        jdb, ldb, "u1", "i1", {"is_favorite": True, "in_favorites": True}
+    )
+    assert res["passed"] is False
+    assert res["error"]["code"] == "DB_READ_ERROR"
+    assert "locked" in res["error"]["message"].lower()
+

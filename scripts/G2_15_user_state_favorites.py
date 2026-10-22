@@ -54,6 +54,8 @@ def record_db_validation(
         val_entry = {
             "passed": False,
             "step": step,
+            "api_is_favorite": api_state.get("is_favorite") if isinstance(api_state, dict) else None,
+            "api_in_favorites": api_state.get("in_favorites") if isinstance(api_state, dict) else None,
             "internal_id": None,
             "user_data_key": None,
             "row_counts": {
@@ -76,6 +78,8 @@ def record_db_validation(
     val_result = validate_favorite_state(paths[0], paths[1], user_id, item_id, api_state)
     val_entry = dict(val_result)
     val_entry["step"] = step
+    val_entry["api_is_favorite"] = api_state.get("is_favorite") if isinstance(api_state, dict) else None
+    val_entry["api_in_favorites"] = api_state.get("in_favorites") if isinstance(api_state, dict) else None
     instance_record.setdefault("db_validation", []).append(val_entry)
     return bool(val_result.get("passed", False))
 

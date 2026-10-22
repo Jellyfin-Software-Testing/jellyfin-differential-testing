@@ -772,6 +772,46 @@ def test_read_state_does_not_call_db_validator(monkeypatch):
     assert called is False
 
 
+def test_record_db_validation_includes_api_state(monkeypatch):
+    runner = load_runner_module()
+    client = StatefulFakeClient(initial_favorite=False)
+
+    def mock_val(jdb, ldb, user_id, item_id, api_state):
+        return {
+            "passed": True,
+            "internal_id": 1,
+            "user_data_key": "k1",
+            "row_counts": {"user_by_id": 1, "item_by_guid": 1, "items_by_user_data_key": 1, "user_data": 1},
+            "db_is_favorite": api_state["is_favorite"],
+            "mismatch_codes": [],
+            "error": None,
+        }
+
+    monkeypatch.setattr(runner, "validate_favorite_state", mock_val)
+    fake_paths = {"v10.9.0": (Path("/tmp/jdb"), Path("/tmp/ldb"))}
+    monkeypatch.setattr(runner, "DB_PATHS_BY_VERSION", fake_paths)
+
+    record = {}
+    api_state = {"is_favorite": True, "in_favorites": False}
+    ok = runner.record_db_validation(record, client, "verify_favorite", "admin", "item-1", api_state)
+    assert ok is True
+    assert len(record["db_validation"]) == 1
+    entry = record["db_validation"][0]
+    assert entry["step"] == "verify_favorite"
+    assert entry["api_is_favorite"] is True
+    assert entry["api_in_favorites"] is False
+
+    # Also verify missing DB paths error entry records API state
+    client_unconfigured = FakeClient(label="unconfigured-server")
+    ok_unconf = runner.record_db_validation(record, client_unconfigured, "verify_unfavorite", "admin", "item-1", {"is_favorite": False, "in_favorites": False})
+    assert ok_unconf is False
+    assert len(record["db_validation"]) == 2
+    err_entry = record["db_validation"][1]
+    assert err_entry["api_is_favorite"] is False
+    assert err_entry["api_in_favorites"] is False
+
+
+
 
 
 
