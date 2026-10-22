@@ -16,11 +16,11 @@ Out of scope: validating non-favorite state, comparing raw database IDs across v
 
 ## Design
 
-Add a small `scripts/db_validator.py` module and call it from G2-15 after each API state read. It opens the instance's two database files with SQLite URI `mode=ro` and issues `SELECT` queries only. It must not fall back to a writable connection. If it cannot read a consistent database/WAL snapshot, the instance validation fails.
+Add a small `scripts/db_validator.py` module. Call it only from the G2-15 lifecycle orchestration after each relevant API state read/transition; do not add DB validation to `read_state` or another shared helper, since G2-16 imports `read_state`.
 
-For each observation, resolve the API user ID to exactly one `Users.Id` row in `jellyfin.db` and obtain `InternalId`. Resolve the API item ID to exactly one `TypedBaseItems.guid` row in `library.db` and obtain `UserDataKey`. Then verify that this `UserDataKey` belongs to exactly one row in `TypedBaseItems`; if multiple items use it, fail with `USER_DATA_KEY_COLLISION`.
+Resolve the API user ID to exactly one `Users.Id` row in `jellyfin.db` and obtain `InternalId`. For the library lookup, open one `library.db` connection with SQLite URI `mode=ro` and begin one explicit read transaction. Keep that same connection and transaction for the complete sequence: resolve the API item ID to exactly one `TypedBaseItems.guid` row and obtain `UserDataKey`; verify that this key belongs to exactly one `TypedBaseItems` row; then query `UserDatas` for `(UserDataKey, InternalId)`. If multiple items use the key, fail with `USER_DATA_KEY_COLLISION`. Do not open a new library connection or transaction between these steps.
 
-Query all `UserDatas` rows for the resolved `(UserDataKey, InternalId)` pair. Zero rows means `isFavorite = false`; one row supplies the stored boolean; multiple rows fail. Do not use `fetchone()` for any lookup whose cardinality must be checked.
+Query all `UserDatas` rows for the resolved pair. Zero rows means `isFavorite = false`; one row supplies the stored boolean; multiple rows fail. Do not use `fetchone()` for any lookup whose cardinality must be checked. Data queries use `SELECT` only; `BEGIN`/`COMMIT`/`ROLLBACK` may be used solely to manage the explicit read transaction. No DML, DDL, writable fallback, or `immutable` connection is allowed. If a consistent DB/WAL snapshot cannot be opened, fail the instance.
 
 ## Failure handling
 
@@ -49,15 +49,16 @@ If resolution fails before a value is available, record that field as unavailabl
 
 ## Verification
 
-Unit tests use temporary SQLite databases to cover successful ID resolution, a missing `UserDatas` row mapping to false, true/false values, each ambiguous or duplicate case, `USER_DATA_KEY_COLLISION`, schema/read errors, and all three mismatch codes. They also verify database files are opened read-only and remain unchanged.
+Unit tests use temporary SQLite databases to cover successful ID resolution, a missing `UserDatas` row mapping to false, true/false values, each ambiguous or duplicate case, `USER_DATA_KEY_COLLISION`, schema/read errors, and all three mismatch codes. They verify database files are opened read-only and remain unchanged, and that all library lookups in one validation share a single explicit read transaction/snapshot.
 
-Integration verification runs the existing G2-15 lifecycle against both running instances and observes `false → true → false` through API and DB after each transition. It must also demonstrate that v10.9 state remains readable while Jellyfin is running with WAL active. Failure to read a consistent DB/WAL snapshot fails the instance. Existing cleanup restores the original favorite state.
+Integration verification runs the existing G2-15 lifecycle against both running instances and observes `false → true → false` through API and DB after each transition. Specifically verify that v10.9 `library.db` is readable with `mode=ro` while Jellyfin is running in WAL mode, including its required readable `-wal`/`-shm` sidecars. If those files are unavailable or SQLite cannot open a consistent read-only snapshot, fail the instance; do not create sidecars via a writable fallback or ignore WAL via `immutable`. SQLite read-only WAL support starts at 3.22.0; the current environment reports 3.45.1, so integration should focus on the live sidecar/snapshot behavior. Existing cleanup restores the original favorite state.
 
 ## Acceptance criteria
 
 1. Every observed G2-15 favorite state is checked against both relevant API observations and SQLite.
 2. User and item IDs are resolved explicitly, with ambiguity and `UserDataKey` collisions reported rather than guessed.
 3. A missing `UserDatas` row is treated as false; duplicate rows and all other DB errors fail the instance.
-4. SQLite access uses `mode=ro`, runs only `SELECT`, and has no writable fallback.
+4. SQLite data access uses `mode=ro` and `SELECT` only, with an explicit read transaction across the complete `library.db` item/key/user-data lookup; there is no writable or `immutable` fallback.
 5. Evidence identifies the resolution/read stage, row counts, resolved keys, and precise mismatch/error code.
-6. Tests cover false-to-true-to-false on both versions, including live reads while the v10.9 WAL is active.
+6. Tests cover false-to-true-to-false on both versions, including live reads from v10.9 `library.db` while WAL is active.
+7. DB validation is called only by G2-15 lifecycle orchestration and does not change shared `read_state` behavior used by G2-16.
