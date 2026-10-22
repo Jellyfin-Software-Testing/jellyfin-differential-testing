@@ -208,15 +208,3 @@ flowchart TD
 2. **Đối với Đội ngũ Kiểm thử Vi sai:**
    * Sai lệch `400 Bad Request` vs `200 OK` là minh chứng rõ rệt cho sự tiến hóa của bộ phân giải tham số (Model Binding Evolution) giữa .NET 6 và .NET 8.
 
----
-
-## 6. BẢNG KIỂM TRA ĐỐI CHIẾU TIÊU CHUẨN (AUDIT COMPLIANCE CHECKLIST)
-
-| Quy định kiểm toán tại `CONTRIBUTING.md` | Trạng thái | Vị trí minh chứng trong hồ sơ |
-| :--- | :---: | :--- |
-| **1. Lệnh cURL tái hiện lỗi độc lập** | ✅ Đạt | [Mục 2](#2-lệnh-curl-tái-hiện-lỗi-độc-lập-reproduction-curl) (Có đủ cURL cho cả v10.8 và v10.9) |
-| **2. Diff Log từ Differential Engine** | ✅ Đạt | [Mục 3](#3-bảng-đối-chiếu-vi-sai-differential-engine-diff-log) (So sánh 400 Bad Request vs 200 OK) |
-| **3. Permalink trỏ đến dòng code C# gốc** | ✅ Đạt | [Mục 4.1](#41-tầng-1-api-controller-layer-jellyfinapi) (`ItemsController.cs`) & [Mục 4.2](#42-tầng-2-core-service-layer--enum-definition-jellyfindata) (`ItemFields.cs`) |
-| **4. Git Commit SHA gây ra sai lệch** | ✅ Đạt | [Mục 4.4](#44-tầng-4-lịch-sử-commit--pull-request-gây-ra-sai-lệch-audit-trail) (PR #10214 / #9876) |
-| **5. File minh chứng thực nghiệm độc lập** | ✅ Đạt | [`docs/evidence/G2_28/live-defect-2-evidence.json`](file:///d:/jellyfin-differential-testing/docs/evidence/G2_28/live-defect-2-evidence.json) |
-| **6. Kịch bản chạy tự động hóa** | ✅ Đạt | [`scripts/G2_28/test_defect_2_live.py`](file:///d:/jellyfin-differential-testing/scripts/G2_28/test_defect_2_live.py) |
