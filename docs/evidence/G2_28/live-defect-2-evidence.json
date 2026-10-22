@@ -1,0 +1,126 @@
+{
+  "defect_id": "DEFECT-02",
+  "category": "SEARCH_FILTER_API_FAMILY",
+  "test_results": [
+    {
+      "scenario": "Kịch bản 1 (Search Hints)",
+      "path": "/Search/Hints?searchTerm=test",
+      "baseline_v108": {
+        "target_url": "http://localhost:8096/Search/Hints?searchTerm=test",
+        "status_code": 200,
+        "reason": "OK",
+        "content_type": "application/json; charset=utf-8",
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "target_v109": {
+        "target_url": "http://localhost:8097/Search/Hints?searchTerm=test",
+        "status_code": 200,
+        "reason": "OK",
+        "content_type": "application/json; charset=utf-8",
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "status_mismatch": false
+    },
+    {
+      "scenario": "Kịch bản 2 (Library Query Filters)",
+      "path": "/Items/Filters",
+      "baseline_v108": {
+        "target_url": "http://localhost:8096/Items/Filters",
+        "status_code": 200,
+        "reason": "OK",
+        "content_type": "application/json; charset=utf-8",
+        "body": {
+          "Genres": [],
+          "Tags": [],
+          "OfficialRatings": [],
+          "Years": []
+        }
+      },
+      "target_v109": {
+        "target_url": "http://localhost:8097/Items/Filters",
+        "status_code": 200,
+        "reason": "OK",
+        "content_type": "application/json; charset=utf-8",
+        "body": {
+          "Genres": [],
+          "Tags": [],
+          "OfficialRatings": [],
+          "Years": []
+        }
+      },
+      "status_mismatch": false
+    },
+    {
+      "scenario": "Kịch bản 3 (Search với Enum Filter fields)",
+      "path": "/Items?searchTerm=sample&fields=SyncInfo,BasicSyncInfo",
+      "baseline_v108": {
+        "target_url": "http://localhost:8096/Items?searchTerm=sample&fields=SyncInfo,BasicSyncInfo",
+        "status_code": 400,
+        "reason": "Bad Request",
+        "content_type": "text/plain",
+        "body": "Error processing request."
+      },
+      "target_v109": {
+        "target_url": "http://localhost:8097/Items?searchTerm=sample&fields=SyncInfo,BasicSyncInfo",
+        "status_code": 200,
+        "reason": "OK",
+        "content_type": "application/json; charset=utf-8",
+        "body": {
+          "Items": [
+            {
+              "Name": "Differential Seed Music",
+              "ServerId": "39dfb9b744c34143b7b82dde70c0b9dc",
+              "Id": "f1e6ccc7f6be0b0c9b427a422e1bacd0",
+              "ChannelId": null,
+              "IsFolder": true,
+              "Type": "CollectionFolder",
+              "UserData": {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "f1e6ccc7-f6be-0b0c-9b42-7a422e1bacd0"
+              },
+              "CollectionType": "music",
+              "ImageTags": {},
+              "BackdropImageTags": [],
+              "ImageBlurHashes": {},
+              "LocationType": "FileSystem",
+              "MediaType": "Unknown"
+            },
+            {
+              "Name": "Playlists",
+              "ServerId": "39dfb9b744c34143b7b82dde70c0b9dc",
+              "Id": "1071671e7bffa0532e930debee501d2e",
+              "ChannelId": null,
+              "IsFolder": true,
+              "Type": "ManualPlaylistsFolder",
+              "UserData": {
+                "PlaybackPositionTicks": 0,
+                "PlayCount": 0,
+                "IsFavorite": false,
+                "Played": false,
+                "Key": "1071671e-7bff-a053-2e93-0debee501d2e"
+              },
+              "CollectionType": "playlists",
+              "ImageTags": {},
+              "BackdropImageTags": [],
+              "ImageBlurHashes": {},
+              "LocationType": "FileSystem",
+              "MediaType": "Unknown"
+            }
+          ],
+          "TotalRecordCount": 2,
+          "StartIndex": 0
+        }
+      },
+      "status_mismatch": true
+    }
+  ]
+}
