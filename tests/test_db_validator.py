@@ -424,7 +424,7 @@ def test_library_lookups_share_one_read_transaction(tmp_path: Path, monkeypatch)
             assert s_idx < commit_idx, "Queries must be executed before COMMIT"
 
 
-def test_locked_non_wal_db_retries_with_nolock(tmp_path: Path):
+def test_locked_non_wal_db_fails_without_nolock(tmp_path: Path):
     jdb, ldb = create_fixture_dbs(tmp_path)
     with sqlite3.connect(str(jdb)) as con:
         con.execute('INSERT INTO Users ("Id", "InternalId") VALUES ("u1", 10)')
@@ -447,9 +447,9 @@ def test_locked_non_wal_db_retries_with_nolock(tmp_path: Path):
         res = validate_favorite_state(
             jdb, ldb, "u1", "i1", {"is_favorite": True, "in_favorites": True}
         )
-        assert res["passed"] is True
-        assert res["db_is_favorite"] is True
-        assert res["error"] is None
+        assert res["passed"] is False
+        assert res["error"]["code"] == "DB_SNAPSHOT_ERROR"
+        assert res["error"]["stage"] == "snapshot_read"
     finally:
         try:
             lock_conn.execute("ROLLBACK;")
@@ -504,6 +504,7 @@ def test_locked_wal_db_does_not_retry_with_nolock(tmp_path: Path, monkeypatch):
         jdb, ldb, "u1", "i1", {"is_favorite": True, "in_favorites": True}
     )
     assert res["passed"] is False
-    assert res["error"]["code"] == "DB_READ_ERROR"
+    assert res["error"]["code"] == "DB_SNAPSHOT_ERROR"
+    assert res["error"]["stage"] == "snapshot_begin"
     assert "locked" in res["error"]["message"].lower()
 

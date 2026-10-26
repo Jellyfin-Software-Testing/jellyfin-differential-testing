@@ -296,6 +296,8 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
             cleanup_db_failed = False
             try:
                 curr_state = read_state(client, user_id, item_id)
+                if not record_db_validation(instance_record, client, "cleanup", user_id, item_id, curr_state):
+                    cleanup_db_failed = True
                 needs_restore = (
                     curr_state["is_favorite"] != baseline_is_fav
                     or curr_state["in_favorites"] != baseline_is_fav
@@ -306,7 +308,9 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                     )
                     favorite_request(client, restore_action, user_id, item_id)
                     restored_state = read_state(client, user_id, item_id)
-                    if not record_db_validation(instance_record, client, "cleanup", user_id, item_id, restored_state):
+                    if not record_db_validation(
+                        instance_record, client, "cleanup_restored", user_id, item_id, restored_state
+                    ):
                         cleanup_db_failed = True
                     if (
                         restored_state["is_favorite"] != baseline_is_fav
@@ -315,10 +319,6 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                         raise SetupError(
                             f"{client.server.label}: failed to restore baseline state to {baseline_is_fav} (got {restored_state})"
                         )
-                else:
-                    if not record_db_validation(instance_record, client, "cleanup", user_id, item_id, curr_state):
-                        cleanup_db_failed = True
-
                 if cleanup_db_failed:
                     instance_record["cleanup"] = {"status": "failed", "error": "cleanup DB validation failed"}
                     instance_record["success"] = False

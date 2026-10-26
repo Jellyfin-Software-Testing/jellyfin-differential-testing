@@ -68,7 +68,6 @@ def validate_favorite_state(
         user_id,
         item_id,
         api_state,
-        use_nolock_on_locked=False,
     )
 
 
@@ -78,7 +77,6 @@ def _do_validate_favorite_state(
     user_id: str,
     item_id: str,
     api_state: dict[str, bool],
-    use_nolock_on_locked: bool = False,
 ) -> dict[str, Any]:
     row_counts: dict[str, int | None] = {
         "user_by_id": None,
@@ -174,11 +172,7 @@ def _do_validate_favorite_state(
 
     # 2. Open library.db once with single read transaction
     try:
-        if use_nolock_on_locked:
-            uri = f"{library_db_path.resolve().as_uri()}?mode=ro&nolock=1"
-            con_lib = sqlite3.connect(uri, uri=True, isolation_level=None)
-        else:
-            con_lib = _open_ro(library_db_path)
+        con_lib = _open_ro(library_db_path)
     except (sqlite3.DatabaseError, OSError) as exc:
         return {
             "passed": False,
@@ -195,9 +189,11 @@ def _do_validate_favorite_state(
         }
 
     in_transaction = False
+    read_stage = "snapshot_begin"
     try:
         con_lib.execute("BEGIN")
         in_transaction = True
+        read_stage = "snapshot_read"
 
         # Item GUID lookup
         item_cands = _get_guid_candidates(item_id)
@@ -209,6 +205,7 @@ def _do_validate_favorite_state(
         )
         item_rows = cur.fetchall()
         row_counts["item_by_guid"] = len(item_rows)
+        read_stage = "library_lookup"
 
         if len(item_rows) == 0:
             return {
@@ -260,7 +257,8 @@ def _do_validate_favorite_state(
         owner_rows = cur.fetchall()
         row_counts["items_by_user_data_key"] = len(owner_rows)
 
-        if len(owner_rows) > 1:
+        if len(owner_rows) != 1:
+            code = "USER_DATA_KEY_COLLISION" if owner_rows else "USER_DATA_KEY_ORPHANED"
             return {
                 "passed": False,
                 "internal_id": internal_id,
@@ -269,9 +267,12 @@ def _do_validate_favorite_state(
                 "db_is_favorite": None,
                 "mismatch_codes": [],
                 "error": {
-                    "code": "USER_DATA_KEY_COLLISION",
-                    "stage": "key_collision",
-                    "message": f"UserDataKey {user_data_key} collision: owned by {len(owner_rows)} items",
+                    "code": code,
+                    "stage": "key_ownership",
+                    "message": (
+                        f"UserDataKey {user_data_key} must have exactly one owner; "
+                        f"found {len(owner_rows)}"
+                    ),
                 },
             }
 
@@ -325,28 +326,12 @@ def _do_validate_favorite_state(
 
     except sqlite3.OperationalError as exc:
         err_msg = str(exc).lower()
-        if "locked" in err_msg and not use_nolock_on_locked:
-            resolved_lib = library_db_path.resolve()
-            wal_path = resolved_lib.parent / f"{resolved_lib.name}-wal"
-            if not wal_path.exists():
-                # Retry with nolock=1 on non-WAL database held under POSIX lock
-                if in_transaction:
-                    try:
-                        con_lib.execute("ROLLBACK")
-                    except Exception:
-                        pass
-                    in_transaction = False
-                con_lib.close()
-                con_lib = None
-                return _do_validate_favorite_state(
-                    jellyfin_db_path,
-                    library_db_path,
-                    user_id,
-                    item_id,
-                    api_state,
-                    use_nolock_on_locked=True,
-                )
-        code = "DB_SCHEMA_ERROR" if "no such" in err_msg else "DB_READ_ERROR"
+        if "no such" in err_msg:
+            code, stage = "DB_SCHEMA_ERROR", "library_lookup"
+        elif "locked" in err_msg or read_stage != "library_lookup":
+            code, stage = "DB_SNAPSHOT_ERROR", read_stage
+        else:
+            code, stage = "DB_READ_ERROR", "library_lookup"
         return {
             "passed": False,
             "internal_id": internal_id,
@@ -354,7 +339,7 @@ def _do_validate_favorite_state(
             "row_counts": row_counts,
             "db_is_favorite": None,
             "mismatch_codes": [],
-            "error": {"code": code, "stage": "library_lookup", "message": str(exc)},
+            "error": {"code": code, "stage": stage, "message": str(exc)},
         }
     except Exception as exc:
         return {
@@ -364,7 +349,11 @@ def _do_validate_favorite_state(
             "row_counts": row_counts,
             "db_is_favorite": None,
             "mismatch_codes": [],
-            "error": {"code": "DB_READ_ERROR", "stage": "library_lookup", "message": str(exc)},
+            "error": {
+                "code": "DB_SNAPSHOT_ERROR" if read_stage != "library_lookup" else "DB_READ_ERROR",
+                "stage": read_stage,
+                "message": str(exc),
+            },
         }
     finally:
         if con_lib is not None:

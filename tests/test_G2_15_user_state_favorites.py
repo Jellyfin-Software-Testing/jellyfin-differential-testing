@@ -664,6 +664,7 @@ def test_run_instance_records_db_validation_for_lifecycle_states(monkeypatch, in
             "verify_favorite",
             "verify_unfavorite",
             "cleanup",
+            "cleanup_restored",
         ]
     else:
         assert recorded_steps == [
@@ -712,9 +713,10 @@ def test_db_validation_failure_marks_instance_failed_and_cleanup_restores(monkey
 
     res = runner.run_instance(client, "admin", seed)
     assert res["success"] is False
-    assert res["cleanup"]["status"] == "passed"
+    assert res["cleanup"]["status"] == "failed"
     assert client.is_fav is False
     assert any(v["passed"] is False for v in res["db_validation"])
+    assert any(v["step"] == "cleanup_restored" and v["passed"] is True for v in res["db_validation"])
 
 
 def test_cleanup_db_validation_failure_keeps_instance_failed(monkeypatch):
