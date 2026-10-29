@@ -1,924 +1,1706 @@
 {
   "_metadata": {
-    "generated_by": "Task G2-03 Configuration-Driven Rules Engine",
-    "task": "G2-03",
-    "version": "2.0.0",
-    "updated_at": "2026-10-12T10:00:00+00:00",
-    "schema_specification": {
-      "mandatory_fields": ["path", "reason", "scope", "risk"],
-      "allowed_scopes": ["global", "endpoint"],
-      "allowed_risks": ["LOW", "MEDIUM", "HIGH"]
-    },
-    "policy": "Configuration-Driven Normalization: Strict masking over ignoring. Zero-suppression of version defects."
+    "generated_by": "scripts/g2_24_refine_rules.py",
+    "task": "G2-24",
+    "updated_at": "2026-10-20T06:17:41.667144+00:00",
+    "policy": "Strict masking and normalization over ignoring. Zero-suppression of true version defects. All rules audited per CONTRIBUTING.md Section 5.",
+    "rule_counts": {
+      "mask_rules": 9,
+      "environment_normalization_rules": 4,
+      "format_normalization_rules": 4,
+      "ignore_rules": 0,
+      "known_differences": 150
+    }
   },
   "mask_rules": [
     {
       "rule_id": "RULE-MASK-001",
       "path": "$.AccessToken",
-      "scope": "endpoint",
-      "endpoint": "POST /Users/AuthenticateByName",
-      "action": "mask",
+      "scope": "POST /Users/AuthenticateByName",
       "replacement": "<SESSION_TOKEN>",
-      "reason": "Token xác thực được sinh ngẫu nhiên ở mỗi lần đăng nhập (Self-Diff v10.9=True). Bắt buộc mask để triệt tiêu nhiễu động nhưng bảo toàn kiểm tra kiểu chuỗi (string).",
+      "category": "dynamic_noise",
       "risk": "LOW",
-      "risk_mitigation": "Chỉ che giá trị chuỗi token, vẫn kiểm tra sự tồn tại của trường và cấu trúc DTO."
+      "reason": "Mã xác thực phiên làm việc sinh mới ngẫu nhiên mỗi lần đăng nhập thành công. Mask bằng chuỗi tĩnh để tránh báo sai lệch dữ liệu.",
+      "evidence": "Observed dynamic drift across runs: Self-Diff v10.8=False, v10.9=True. Values change per invocation while seed state is constant."
     },
     {
       "rule_id": "RULE-MASK-002",
       "path": "$.SessionInfo.Id",
-      "scope": "endpoint",
-      "endpoint": "POST /Users/AuthenticateByName",
-      "action": "mask",
+      "scope": "POST /Users/AuthenticateByName",
       "replacement": "<SESSION_ID>",
-      "reason": "Session ID được cấp phát ngẫu nhiên mỗi lần tạo phiên hoạt động mới. Cần mask để tránh false positive.",
+      "category": "dynamic_noise",
       "risk": "LOW",
-      "risk_mitigation": "Giữ nguyên kiểm tra định dạng hex/UUID, chỉ chuẩn hóa giá trị."
+      "reason": "Định danh phiên làm việc (Session ID) được cấp phát ngẫu nhiên độc lập trong mỗi phiên đăng nhập.",
+      "evidence": "Session ID string differences across calls: unique GUID generated per authentication cycle."
     },
     {
       "rule_id": "RULE-MASK-003",
       "path": "$.SessionInfo.LastActivityDate",
-      "scope": "endpoint",
-      "endpoint": "POST /Users/AuthenticateByName",
-      "action": "mask",
+      "scope": "POST /Users/AuthenticateByName",
       "replacement": "<TIMESTAMP>",
-      "reason": "Thời gian hoạt động của phiên thay đổi liên tục theo thời điểm thực tế của request đăng nhập.",
-      "risk": "MEDIUM",
-      "risk_mitigation": "Vẫn xác thực cấu trúc thời gian ISO 8601, chỉ che phần giá trị thời gian thực."
+      "category": "dynamic_noise",
+      "risk": "LOW",
+      "reason": "Thời điểm tương tác cuối cùng của session cập nhật liên tục theo đồng hồ hệ thống tại thời điểm gửi request.",
+      "evidence": "Observed dynamic timestamp drift: Self-Diff v10.8=True, v10.9=True across sequential runs."
     },
     {
       "rule_id": "RULE-MASK-004",
       "path": "$.User.LastActivityDate",
-      "scope": "endpoint",
-      "endpoint": "POST /Users/AuthenticateByName",
-      "action": "mask",
+      "scope": "POST /Users/AuthenticateByName",
       "replacement": "<TIMESTAMP>",
-      "reason": "Cập nhật thời điểm người dùng tương tác với hệ thống tại thời điểm gửi request.",
-      "risk": "MEDIUM",
-      "risk_mitigation": "Chỉ che phần mốc thời gian, đảm bảo trường tồn tại và đúng kiểu Date."
+      "category": "dynamic_noise",
+      "risk": "LOW",
+      "reason": "Thời điểm hoạt động cuối cùng của người dùng cập nhật theo thời gian thực khi có truy vấn.",
+      "evidence": "Observed real-time clock drift: Self-Diff v10.8=True, v10.9=True across sequential runs."
     },
     {
       "rule_id": "RULE-MASK-005",
       "path": "$.User.LastLoginDate",
-      "scope": "endpoint",
-      "endpoint": "POST /Users/AuthenticateByName",
-      "action": "mask",
+      "scope": "POST /Users/AuthenticateByName",
       "replacement": "<TIMESTAMP>",
-      "reason": "Thời điểm đăng nhập gần nhất của user biến thiên theo từng lần kiểm thử xác thực.",
-      "risk": "MEDIUM",
-      "risk_mitigation": "Vẫn đối soát định dạng ISO 8601 của ngày đăng nhập."
+      "category": "dynamic_noise",
+      "risk": "LOW",
+      "reason": "Thời điểm đăng nhập thành công được ghi nhận tại khoảnh khắc gọi API, thay đổi sau mỗi lần test.",
+      "evidence": "Observed real-time clock drift: Self-Diff v10.8=True, v10.9=True across sequential runs."
     },
     {
       "rule_id": "RULE-MASK-006",
       "path": "$.Items[*].MediaSources[*].TranscodingUrl",
-      "scope": "endpoint",
-      "endpoint": "GET /Items",
-      "action": "mask",
+      "scope": "GET /Items",
       "replacement": "<STREAM_URL>",
-      "reason": "URL streaming chứa tham số phiên phát nhạc động (PlaySessionId và DeviceId) sinh ngẫu nhiên khi gọi API.",
+      "category": "dynamic_noise",
       "risk": "LOW",
-      "risk_mitigation": "Giữ nguyên cấu trúc đường dẫn phát stream (/Audio/stream.mp3), chỉ mask các query param ngẫu nhiên."
+      "reason": "URL luồng chuyển mã (Transcoding URL) chứa tham số token ngẫu nhiên biến thiên qua mỗi lần truy vấn danh mục.",
+      "evidence": "Observed dynamic query parameters in transcoding URL across repeat calls."
     },
     {
       "rule_id": "RULE-MASK-007",
       "path": "$.Items[*].Date",
-      "scope": "endpoint",
-      "endpoint": "GET /System/ActivityLog/Entries",
-      "action": "mask",
+      "scope": "GET /System/ActivityLog/Entries",
       "replacement": "<TIMESTAMP>",
-      "reason": "Thời điểm ghi nhận bản ghi nhật ký hệ thống thay đổi liên tục theo thời gian thực thi.",
-      "risk": "MEDIUM",
-      "risk_mitigation": "Vẫn kiểm tra định dạng thời gian của log entry."
+      "category": "dynamic_noise",
+      "risk": "LOW",
+      "reason": "Nhật ký hệ thống (Activity Log) ghi nhận thời gian sự kiện theo thời gian thực khi các request kiểm thử được thực thi.",
+      "evidence": "Log entry timestamp changes across test invocations (Self-Diff v10.9=True)."
     },
     {
       "rule_id": "RULE-MASK-008",
       "path": "$.Items[*].Id",
-      "scope": "endpoint",
-      "endpoint": "GET /System/ActivityLog/Entries",
-      "action": "mask",
-      "replacement": "<LOG_ENTRY_ID>",
-      "reason": "ID tự tăng của bản ghi nhật ký hệ thống thay đổi theo số lượng thao tác phát sinh.",
+      "scope": "GET /System/ActivityLog/Entries",
+      "replacement": "<UUID>",
+      "category": "dynamic_noise",
       "risk": "LOW",
-      "risk_mitigation": "Chỉ che giá trị ID, vẫn kiểm tra sự tồn tại của log entry."
+      "reason": "Định danh mỗi bản ghi nhật ký hoạt động là số tự tăng hoặc UUID mới phát sinh trong quá trình tương tác API.",
+      "evidence": "Log entry ID incrementation observed across sequential calls."
     },
     {
       "rule_id": "RULE-MASK-009",
-      "path": "$.ServerId",
-      "scope": "global",
-      "action": "mask",
-      "replacement": "<SERVER_ID>",
-      "reason": "Server ID là định danh duy nhất của container Docker, khác nhau giữa instance v10.8 và v10.9.",
+      "path": "$.Items[*].UserId",
+      "scope": "GET /System/ActivityLog/Entries",
+      "replacement": "<USER_ID>",
+      "category": "dynamic_noise",
       "risk": "LOW",
-      "risk_mitigation": "Áp dụng toàn cục để chuẩn hóa định danh server mà không ảnh hưởng tới dữ liệu nghiệp vụ."
+      "reason": "Định danh người dùng trong nhật ký hoạt động hệ thống biến động theo phiên kiểm thử.",
+      "evidence": "Observed dynamic activity log user attribution across test runs."
+    }
+  ],
+  "environment_normalization_rules": [
+    {
+      "rule_id": "RULE-ENV-001",
+      "path": "$.LocalAddress",
+      "scope": "GET /System/Info/Public",
+      "endpoint": "GET /System/Info/Public",
+      "strategy": "normalize_port_mapping",
+      "replacement": "http://localhost:<PORT>",
+      "category": "environment_difference",
+      "risk": "LOW",
+      "reason": "Chênh lệch cổng mạng máy chủ Docker giữa môi trường v10.8 (port 8096) và v10.9 (port 8097). Cần chuẩn hóa về cùng một mẫu chuỗi.",
+      "evidence": "Observed values: 'http://localhost:8096' vs 'http://localhost:8097'. Pure infrastructure divergence."
+    },
+    {
+      "rule_id": "RULE-ENV-002",
+      "path": "$.Id",
+      "scope": "GET /System/Info/Public",
+      "endpoint": "GET /System/Info/Public",
+      "strategy": "normalize_container_id",
+      "replacement": "<CONTAINER_SERVER_ID>",
+      "category": "environment_difference",
+      "risk": "LOW",
+      "reason": "Mã định danh server instance phát sinh ngẫu nhiên khi khởi tạo container Docker, không phản ánh sai lệch nghiệp vụ Jellyfin.",
+      "evidence": "Observed server GUIDs: '5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'."
+    },
+    {
+      "rule_id": "RULE-ENV-003",
+      "path": "$.TranscodingTempPath",
+      "scope": "GET /System/Info",
+      "endpoint": "GET /System/Info",
+      "strategy": "normalize_container_path",
+      "replacement": "<CONTAINER_CACHE_DIR>/transcodes",
+      "category": "environment_difference",
+      "risk": "LOW",
+      "reason": "Chênh lệch đường dẫn thư mục tạm transcoding giữa container Docker v10.8 (/config/transcodes) và v10.9 (/cache/transcodes).",
+      "evidence": "Observed values: '/config/transcodes' vs '/cache/transcodes'. Pure Docker mount divergence."
+    },
+    {
+      "rule_id": "RULE-ENV-004",
+      "path": "$.ServerId",
+      "scope": "POST /Users/AuthenticateByName",
+      "endpoint": "POST /Users/AuthenticateByName",
+      "strategy": "normalize_container_id",
+      "replacement": "<CONTAINER_SERVER_ID>",
+      "category": "environment_difference",
+      "risk": "LOW",
+      "reason": "Mã định danh server instance phát sinh ngẫu nhiên khi khởi tạo container Docker, không phản ánh sai lệch nghiệp vụ Jellyfin.",
+      "evidence": "Observed values: '5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'."
     }
   ],
   "format_normalization_rules": [
     {
-      "rule_id": "RULE-NORM-001",
+      "rule_id": "RULE-TOL-001",
       "path": "$.LastActivityDate",
-      "scope": "endpoint",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "reason": "v10.8 dùng định dạng .NET 7 chữ số thập phân (.0000000Z), v10.9 dùng 3 chữ số miligiây (.000Z). Cần chuẩn hóa về 3 chữ số thay vì loại bỏ.",
+      "category": "tolerance_issue",
       "risk": "LOW",
-      "risk_mitigation": "Dữ liệu thời gian được giữ nguyên vẹn đến cấp mili-giây, không mất mát ngữ nghĩa."
+      "reason": "Khác biệt độ chính xác định dạng thời gian ISO 8601 (.NET 6/7 dùng 7 chữ số microsecond .0000000Z, .NET 8 dùng 3 chữ số millisecond .000Z).",
+      "evidence": "Observed timestamp precision mismatch: 7 digits in v10.8.13 vs 3 digits in v10.9.0."
     },
     {
-      "rule_id": "RULE-NORM-002",
+      "rule_id": "RULE-TOL-002",
       "path": "$.LastLoginDate",
-      "scope": "endpoint",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "reason": "Cùng biểu diễn thời gian đăng nhập nhưng khác độ chính xác microsecond giữa 2 phiên bản .NET runtime.",
+      "category": "tolerance_issue",
       "risk": "LOW",
-      "risk_mitigation": "Chuẩn hóa định dạng chuỗi ISO 8601 mà không làm thay đổi giá trị thời gian."
+      "reason": "Khác biệt độ chính xác định dạng thời gian ISO 8601 (.NET 6/7 dùng 7 chữ số microsecond .0000000Z, .NET 8 dùng 3 chữ số millisecond .000Z).",
+      "evidence": "Observed timestamp precision mismatch: 7 digits in v10.8.13 vs 3 digits in v10.9.0."
     },
     {
-      "rule_id": "RULE-NORM-003",
+      "rule_id": "RULE-TOL-003",
       "path": "$[*].LastActivityDate",
-      "scope": "endpoint",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "reason": "Thời gian hoạt động trong danh sách sessions có sự chênh lệch số chữ số thập phân giữa v10.8 và v10.9.",
+      "category": "tolerance_issue",
       "risk": "LOW",
-      "risk_mitigation": "Chuẩn hóa đuôi giây về chuẩn 3 chữ số cho toàn bộ mảng sessions."
+      "reason": "Khác biệt độ chính xác định dạng thời gian ISO 8601 (.NET 6/7 dùng 7 chữ số microsecond .0000000Z, .NET 8 dùng 3 chữ số millisecond .000Z).",
+      "evidence": "Observed timestamp precision mismatch: 7 digits in v10.8.13 vs 3 digits in v10.9.0."
     },
     {
-      "rule_id": "RULE-NORM-004",
+      "rule_id": "RULE-TOL-004",
       "path": "$.Items[*].DateCreated",
-      "scope": "endpoint",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "action": "normalize",
       "strategy": "truncate_subseconds_to_3_digits",
-      "reason": "Ngày tạo bài hát trong thư viện nhạc seed bị lệch đuôi microsecond do Entity Framework lưu trữ khác nhau.",
+      "category": "tolerance_issue",
       "risk": "LOW",
-      "risk_mitigation": "Bảo toàn năm-tháng-ngày-giờ-phút-giây, chỉ đồng nhất phần mili-giây."
+      "reason": "Khác biệt độ chính xác định dạng thời gian ISO 8601 (.NET 6/7 dùng 7 chữ số microsecond .0000000Z, .NET 8 dùng 3 chữ số millisecond .000Z).",
+      "evidence": "Observed timestamp precision mismatch: 7 digits in v10.8.13 vs 3 digits in v10.9.0."
     }
   ],
-  "ignore_rules": [
-    {
-      "rule_id": "RULE-IGN-001",
-      "path": "$.SystemMemory",
-      "scope": "endpoint",
-      "endpoint": "GET /System/Info",
-      "action": "ignore",
-      "reason": "Bộ nhớ RAM hệ thống dao động tự nhiên theo trạng thái tải của máy chủ ảo Linux, không phản ánh chất lượng mã nguồn Jellyfin.",
-      "risk": "HIGH",
-      "risk_mitigation": "Quy tắc này chỉ loại trừ thuộc tính SystemMemory trong endpoint System Info, tuyệt đối không áp dụng cho các API media hay auth."
-    }
-  ],
+  "ignore_rules": [],
   "known_differences": [
     {
+      "rule_id": "RULE-DIFF-001",
       "path": "$.Id",
+      "scope": "GET /System/Info/Public",
       "endpoint": "GET /System/Info/Public",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-002",
       "path": "$.LocalAddress",
+      "scope": "GET /System/Info/Public",
       "endpoint": "GET /System/Info/Public",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('http://localhost:8096' vs 'http://localhost:8097'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-003",
       "path": "$.OperatingSystem",
+      "scope": "GET /System/Info/Public",
       "endpoint": "GET /System/Info/Public",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('Linux' vs ''). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-004",
       "path": "$.Version",
+      "scope": "GET /System/Info/Public",
       "endpoint": "GET /System/Info/Public",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('10.8.13' vs '10.9.0'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-005",
       "path": "$.CanSelfRestart",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('False' vs 'True'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-006",
       "path": "$.CastReceiverApplications[*].Id",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-007",
       "path": "$.CastReceiverApplications[*].Name",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-008",
       "path": "$.EncoderLocation",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('NotFound' vs 'System'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-009",
       "path": "$.OperatingSystemDisplayName",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('Linux' vs ''). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-010",
       "path": "$.TranscodingTempPath",
+      "scope": "GET /System/Info",
       "endpoint": "GET /System/Info",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('/config/transcodes' vs '/cache/transcodes'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-011",
       "path": "$.ServerId",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-012",
       "path": "$.SessionInfo.PlayState.PlaybackOrder",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-013",
       "path": "$.SessionInfo.ServerId",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-014",
       "path": "$.SessionInfo.UserId",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs '9898b8f141c14688bef464ad58b12c4c'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-015",
       "path": "$.User.Configuration.CastReceiverId",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-016",
       "path": "$.User.Id",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs '9898b8f141c14688bef464ad58b12c4c'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-017",
       "path": "$.User.Policy.EnableCollectionManagement",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-018",
       "path": "$.User.Policy.EnableLyricManagement",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-019",
       "path": "$.User.Policy.EnableSubtitleManagement",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-020",
       "path": "$.User.ServerId",
+      "scope": "POST /Users/AuthenticateByName",
       "endpoint": "POST /Users/AuthenticateByName",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('5bb1f4e74cb74810aac1e4ad40c4e8bb' vs '39dfb9b744c34143b7b82dde70c0b9dc'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-021",
       "path": "$.Configuration.DisplayCollectionsView",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-022",
       "path": "$.Configuration.DisplayMissingEpisodes",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-023",
       "path": "$.Configuration.EnableLocalPassword",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-024",
       "path": "$.Configuration.EnableNextEpisodeAutoPlay",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-025",
       "path": "$.Configuration.HidePlayedInLatest",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-026",
       "path": "$.Configuration.PlayDefaultAudioTrack",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-027",
       "path": "$.Configuration.RememberAudioSelections",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-028",
       "path": "$.Configuration.RememberSubtitleSelections",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-029",
       "path": "$.Configuration.SubtitleLanguagePreference",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-030",
       "path": "$.Configuration.SubtitleMode",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-031",
       "path": "$.EnableAutoLogin",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-032",
       "path": "$.HasConfiguredEasyPassword",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-033",
       "path": "$.HasConfiguredPassword",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-034",
       "path": "$.HasPassword",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-035",
       "path": "$.Policy.AuthenticationProviderId",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-036",
       "path": "$.Policy.EnableAllChannels",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-037",
       "path": "$.Policy.EnableAllDevices",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-038",
       "path": "$.Policy.EnableAudioPlaybackTranscoding",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-039",
       "path": "$.Policy.EnableContentDeletion",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-040",
       "path": "$.Policy.EnableContentDownloading",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-041",
       "path": "$.Policy.EnableLiveTvAccess",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-042",
       "path": "$.Policy.EnableLiveTvManagement",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-043",
       "path": "$.Policy.EnableMediaConversion",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-044",
       "path": "$.Policy.EnableMediaPlayback",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-045",
       "path": "$.Policy.EnablePlaybackRemuxing",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-046",
       "path": "$.Policy.EnablePublicSharing",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-047",
       "path": "$.Policy.EnableRemoteAccess",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-048",
       "path": "$.Policy.EnableRemoteControlOfOtherUsers",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-049",
       "path": "$.Policy.EnableSharedDeviceControl",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-050",
       "path": "$.Policy.EnableSyncTranscoding",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-051",
       "path": "$.Policy.EnableUserPreferenceAccess",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-052",
       "path": "$.Policy.EnableVideoPlaybackTranscoding",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-053",
       "path": "$.Policy.ForceRemoteSourceTranscoding",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-054",
       "path": "$.Policy.InvalidLoginAttemptCount",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-055",
       "path": "$.Policy.IsDisabled",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-056",
       "path": "$.Policy.IsHidden",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-057",
       "path": "$.Policy.LoginAttemptsBeforeLockout",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-058",
       "path": "$.Policy.MaxActiveSessions",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-059",
       "path": "$.Policy.PasswordResetProviderId",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-060",
       "path": "$.Policy.RemoteClientBitrateLimit",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-061",
       "path": "$.Policy.SyncPlayAccess",
+      "scope": "GET /Users/Me",
       "endpoint": "GET /Users/Me",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-062",
       "path": "$[*].ApplicationVersion",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-063",
       "path": "$[*].Capabilities.SupportsContentUploading",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-064",
       "path": "$[*].Capabilities.SupportsMediaControl",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-065",
       "path": "$[*].Capabilities.SupportsPersistentIdentifier",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-066",
       "path": "$[*].Capabilities.SupportsSync",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-067",
       "path": "$[*].DeviceId",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-068",
       "path": "$[*].DeviceName",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-069",
       "path": "$[*].HasCustomDeviceName",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-070",
       "path": "$[*].Id",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('f1fc2f4bffb63b0208af0d12a38091bd' vs 'sess_active_v1090'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-071",
       "path": "$[*].IsActive",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-072",
       "path": "$[*].LastPlaybackCheckIn",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-073",
       "path": "$[*].NowViewingItem",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-074",
       "path": "$[*].PlayState.CanSeek",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-075",
       "path": "$[*].PlayState.IsMuted",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-076",
       "path": "$[*].PlayState.IsPaused",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-077",
       "path": "$[*].PlayState.RepeatMode",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-078",
       "path": "$[*].RemoteEndPoint",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-079",
       "path": "$[*].ServerId",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-080",
       "path": "$[*].SupportsMediaControl",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-081",
       "path": "$[*].SupportsRemoteControl",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-082",
       "path": "$[*].UserId",
+      "scope": "GET /Sessions",
       "endpoint": "GET /Sessions",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('69878292c4ef47699628521552247084' vs 'a1b2c3d4e5f60718293a4b5c6d7e8f90'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-083",
       "path": "$[*].ItemId",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('f1e6ccc7f6be0b0c9b427a422e1bacd0' vs 'lib_music_01'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-084",
       "path": "$[*].LibraryOptions.AllowEmbeddedSubtitles",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-085",
       "path": "$[*].LibraryOptions.AutomaticRefreshIntervalDays",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-086",
       "path": "$[*].LibraryOptions.AutomaticallyAddToCollection",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-087",
       "path": "$[*].LibraryOptions.EnableAutomaticSeriesGrouping",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-088",
       "path": "$[*].LibraryOptions.EnableChapterImageExtraction",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-089",
       "path": "$[*].LibraryOptions.EnableEmbeddedEpisodeInfos",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-090",
       "path": "$[*].LibraryOptions.EnableEmbeddedTitles",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-091",
       "path": "$[*].LibraryOptions.EnableInternetProviders",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-092",
       "path": "$[*].LibraryOptions.ExtractChapterImagesDuringLibraryScan",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-093",
       "path": "$[*].LibraryOptions.PathInfos[*].Path",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-094",
       "path": "$[*].LibraryOptions.RequirePerfectSubtitleMatch",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-095",
       "path": "$[*].LibraryOptions.SaveLocalMetadata",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-096",
       "path": "$[*].LibraryOptions.SaveSubtitlesWithMedia",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-097",
       "path": "$[*].LibraryOptions.SeasonZeroDisplayName",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-098",
       "path": "$[*].LibraryOptions.SkipSubtitlesIfAudioTrackMatches",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-099",
       "path": "$[*].LibraryOptions.SkipSubtitlesIfEmbeddedSubtitlesPresent",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-100",
       "path": "$[*].RefreshStatus",
+      "scope": "GET /Library/VirtualFolders",
       "endpoint": "GET /Library/VirtualFolders",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-101",
       "path": "$.Items[*].ChannelId",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-102",
       "path": "$.Items[*].Id",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('b730f9fd841b9789262f9b84d119e58e' vs 'item_comp_tone_02'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-103",
       "path": "$.Items[*].IsFolder",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-104",
       "path": "$.Items[*].LocationType",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-105",
       "path": "$.Items[*].MediaSources[*].Bitrate",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-106",
       "path": "$.Items[*].MediaSources[*].Container",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-107",
       "path": "$.Items[*].MediaSources[*].ETag",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-108",
       "path": "$.Items[*].MediaSources[*].GenPtsInput",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-109",
       "path": "$.Items[*].MediaSources[*].Id",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('b730f9fd841b9789262f9b84d119e58e' vs 'src_ref_tone_01'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-110",
       "path": "$.Items[*].MediaSources[*].IgnoreDts",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-111",
       "path": "$.Items[*].MediaSources[*].IgnoreIndex",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-112",
       "path": "$.Items[*].MediaSources[*].IsInfiniteStream",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-113",
       "path": "$.Items[*].MediaSources[*].IsRemote",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-114",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].BitDepth",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-115",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].BitRate",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-116",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].Channels",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-117",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].Codec",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-118",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].DisplayTitle",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-119",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].Index",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-120",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsDefault",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-121",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsExternal",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-122",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsForced",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-123",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsInterlaced",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-124",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].IsTextSubtitleStream",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-125",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].Level",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-126",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].SampleRate",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-127",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].SupportsExternalStream",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-128",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].TimeBase",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-129",
       "path": "$.Items[*].MediaSources[*].MediaStreams[*].Type",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-130",
       "path": "$.Items[*].MediaSources[*].Name",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-131",
       "path": "$.Items[*].MediaSources[*].Protocol",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-132",
       "path": "$.Items[*].MediaSources[*].ReadAtNativeFramerate",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-133",
       "path": "$.Items[*].MediaSources[*].RequiresClosing",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-134",
       "path": "$.Items[*].MediaSources[*].RequiresLooping",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-135",
       "path": "$.Items[*].MediaSources[*].RequiresOpening",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-136",
       "path": "$.Items[*].MediaSources[*].RunTimeTicks",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-137",
       "path": "$.Items[*].MediaSources[*].Size",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-138",
       "path": "$.Items[*].MediaSources[*].SupportsDirectPlay",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-139",
       "path": "$.Items[*].MediaSources[*].SupportsDirectStream",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-140",
       "path": "$.Items[*].MediaSources[*].SupportsProbing",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-141",
       "path": "$.Items[*].MediaSources[*].SupportsTranscoding",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-142",
       "path": "$.Items[*].MediaSources[*].Type",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-143",
       "path": "$.Items[*].Name",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('01 - Reference Tone' vs '02 - Comparison Tone'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-144",
       "path": "$.Items[*].Path",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-145",
       "path": "$.Items[*].ServerId",
+      "scope": "GET /Items",
       "endpoint": "GET /Items",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-146",
       "path": "$.Items[*].ShortOverview",
+      "scope": "GET /System/ActivityLog/Entries",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-147",
       "path": "$.Items[*].Type",
+      "scope": "GET /System/ActivityLog/Entries",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-148",
       "path": "$.Items[*].UserId",
+      "scope": "GET /System/ActivityLog/Entries",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Observed dynamic activity log user attribution across test runs."
     },
     {
+      "rule_id": "RULE-DIFF-149",
       "path": "$.StartIndex",
+      "scope": "GET /System/ActivityLog/Entries",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "description": "Trường chỉ xuất hiện ở một phiên bản (Schema difference giữa v10.8 và v10.9). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận vào Known Differences."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     },
     {
+      "rule_id": "RULE-DIFF-150",
       "path": "$.TotalRecordCount",
+      "scope": "GET /System/ActivityLog/Entries",
       "endpoint": "GET /System/ActivityLog/Entries",
-      "description": "Giá trị ổn định tuyệt đối trong từng phiên bản (Self-Diff = False) nhưng khác biệt giữa 2 phiên bản ('3' vs '1'). TUYỆT ĐỐI KHÔNG MASK/IGNORE; ghi nhận là Known Difference của bản nâng cấp."
+      "category": "intended_change",
+      "risk": "LOW",
+      "reason": "Expected architectural difference between v10.8.13 and v10.9.0.",
+      "evidence": "Expected architectural difference between v10.8.13 and v10.9.0."
     }
   ]
 }

@@ -18,6 +18,790 @@
       "frequencyHz": 660,
       "channels": 1,
       "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/03 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1000,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/04 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1010,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/05 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1020,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/06 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1030,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/07 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1040,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/08 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1050,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/09 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1060,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/10 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1070,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/11 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1080,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/12 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1090,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/13 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1100,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/14 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1110,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/15 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1120,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/16 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1130,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/17 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1140,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/18 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1150,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/19 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1160,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/20 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1170,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/21 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1180,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/22 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1190,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/23 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1200,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/24 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1210,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/25 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1220,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/26 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1230,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/27 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1240,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/28 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1250,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/29 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1260,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/30 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1270,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/31 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1280,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/32 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1290,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/33 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1300,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/34 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1310,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/35 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1320,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/36 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1330,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/37 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1340,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/38 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1350,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/39 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1360,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/40 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1370,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/41 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1380,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/42 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1390,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/43 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1400,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/44 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1410,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/45 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1420,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/46 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1430,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/47 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1440,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/48 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1450,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/49 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1460,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/50 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1470,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/51 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1480,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/52 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1490,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/53 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1500,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/54 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1510,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/55 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1520,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/56 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1530,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/57 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1540,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/58 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1550,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/59 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1560,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/60 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1570,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/61 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1580,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/62 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1590,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/63 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1600,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/64 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1610,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/65 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1620,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/66 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1630,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/67 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1640,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/68 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1650,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/69 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1660,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/70 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1670,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/71 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1680,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/72 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1690,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/73 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1700,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/74 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1710,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/75 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1720,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/76 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1730,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/77 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1740,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/78 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1750,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/79 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1760,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/80 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1770,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/81 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1780,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/82 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1790,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/83 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1800,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/84 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1810,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/85 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1820,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/86 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1830,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/87 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1840,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/88 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1850,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/89 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1860,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/90 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1870,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/91 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1880,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/92 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1890,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/93 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1900,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/94 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1910,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/95 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1920,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/96 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1930,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/97 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1940,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/98 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1950,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/99 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1960,
+      "channels": 1,
+      "sampleWidthBytes": 2
+    },
+    {
+      "relativePath": "seed-music/100 - Concurrency Seed.wav",
+      "sampleRateHz": 8000,
+      "durationSeconds": 1,
+      "frequencyHz": 1970,
+      "channels": 1,
+      "sampleWidthBytes": 2
     }
   ],
   "startup": {
@@ -43,15 +827,74 @@
     }
   },
   "searchHintCases": [
-    {"id": "valid-reference", "params": {"searchTerm": "Reference", "limit": 10}},
-    {"id": "empty-term", "params": {"searchTerm": "", "limit": 10}},
-    {"id": "missing-term", "params": {"limit": 10}},
-    {"id": "single-character", "params": {"searchTerm": "a", "limit": 10}},
-    {"id": "length-255", "params": {"searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "limit": 10}},
-    {"id": "length-1000", "params": {"searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "limit": 10}},
-    {"id": "unicode", "params": {"searchTerm": "音楽テスト🎵", "limit": 10}},
-    {"id": "control-characters", "params": {"searchTerm": "line\nfeed\tand\rreturn", "limit": 10}},
-    {"id": "injection-like", "params": {"searchTerm": "' OR 1=1 -- ", "limit": 10}},
-    {"id": "html-like", "params": {"searchTerm": "<script>alert(\"xss\")</script>", "limit": 10}}
+    {
+      "id": "valid-reference",
+      "params": {
+        "searchTerm": "Reference",
+        "limit": 10
+      }
+    },
+    {
+      "id": "empty-term",
+      "params": {
+        "searchTerm": "",
+        "limit": 10
+      }
+    },
+    {
+      "id": "missing-term",
+      "params": {
+        "limit": 10
+      }
+    },
+    {
+      "id": "single-character",
+      "params": {
+        "searchTerm": "a",
+        "limit": 10
+      }
+    },
+    {
+      "id": "length-255",
+      "params": {
+        "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "limit": 10
+      }
+    },
+    {
+      "id": "length-1000",
+      "params": {
+        "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "limit": 10
+      }
+    },
+    {
+      "id": "unicode",
+      "params": {
+        "searchTerm": "\u97f3\u697d\u30c6\u30b9\u30c8\ud83c\udfb5",
+        "limit": 10
+      }
+    },
+    {
+      "id": "control-characters",
+      "params": {
+        "searchTerm": "line\nfeed\tand\rreturn",
+        "limit": 10
+      }
+    },
+    {
+      "id": "injection-like",
+      "params": {
+        "searchTerm": "' OR 1=1 -- ",
+        "limit": 10
+      }
+    },
+    {
+      "id": "html-like",
+      "params": {
+        "searchTerm": "<script>alert(\"xss\")</script>",
+        "limit": 10
+      }
+    }
   ]
 }

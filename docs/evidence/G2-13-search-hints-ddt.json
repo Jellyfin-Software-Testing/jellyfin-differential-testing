@@ -12,12 +12,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "4"
+          "X-Response-Time-ms": "11"
         },
         "body": {
           "SearchHints": [
@@ -40,12 +40,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "10.0361"
+          "X-Response-Time-ms": "12.4688"
         },
         "body": {
           "SearchHints": [
@@ -67,8 +67,8 @@
         {
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
-          "v1_value": "4",
-          "v2_value": "10.0361",
+          "v1_value": "11",
+          "v2_value": "12.4688",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         },
         {
@@ -97,18 +97,18 @@
         "status_code": 400,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "2"
+          "X-Response-Time-ms": "3"
         },
         "body": {
           "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
           "title": "One or more validation errors occurred.",
           "status": 400,
-          "traceId": "00-c71984e538d905e2560d0069066a7828-b52b40f7e9ee1238-00",
+          "traceId": "00-179fb3ec41960ad8727bb190a128caed-4f6250ad5dc32ba9-00",
           "errors": {
             "searchTerm": [
               "The searchTerm field is required."
@@ -120,12 +120,12 @@
         "status_code": 400,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "4.5475"
+          "X-Response-Time-ms": "5.1878"
         },
         "body": {
           "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
@@ -136,16 +136,23 @@
               "The searchTerm field is required."
             ]
           },
-          "traceId": "00-de7a45afbeb86dd1cd0eaae6ad4191c3-b26d67f0997ece23-00"
+          "traceId": "00-5d5e86c50855460bee7c33b2da9c936f-28b9616600359878-00"
         }
       },
       "diffs": [
         {
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
-          "v1_value": "2",
-          "v2_value": "4.5475",
+          "v1_value": "3",
+          "v2_value": "5.1878",
           "message": "Header 'X-Response-Time-ms' value mismatch"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.traceId",
+          "v1_value": "00-179fb3ec41960ad8727bb190a128caed-4f6250ad5dc32ba9-00",
+          "v2_value": "00-5d5e86c50855460bee7c33b2da9c936f-28b9616600359878-00",
+          "message": "Value mismatch at $.traceId: '00-179fb3ec41960ad8727bb190a128caed-4f6250ad5dc32ba9-00' vs '00-5d5e86c50855460bee7c33b2da9c936f-28b9616600359878-00'"
         },
         {
           "category": "VALUE_MISMATCH",
@@ -153,13 +160,6 @@
           "v1_value": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
           "v2_value": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
           "message": "Value mismatch at $.type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1' vs 'https://tools.ietf.org/html/rfc9110#section-15.5.1'"
-        },
-        {
-          "category": "VALUE_MISMATCH",
-          "path": "$.traceId",
-          "v1_value": "00-c71984e538d905e2560d0069066a7828-b52b40f7e9ee1238-00",
-          "v2_value": "00-de7a45afbeb86dd1cd0eaae6ad4191c3-b26d67f0997ece23-00",
-          "message": "Value mismatch at $.traceId: '00-c71984e538d905e2560d0069066a7828-b52b40f7e9ee1238-00' vs '00-de7a45afbeb86dd1cd0eaae6ad4191c3-b26d67f0997ece23-00'"
         }
       ]
     },
@@ -172,18 +172,18 @@
         "status_code": 400,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "3"
+          "X-Response-Time-ms": "2"
         },
         "body": {
           "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
           "title": "One or more validation errors occurred.",
           "status": 400,
-          "traceId": "00-02c21755cf496a76d63f7d8aee333259-90ea02b3ab04d8ba-00",
+          "traceId": "00-785f0fdae212560d79911824da2bb99e-c81785c7577d8597-00",
           "errors": {
             "searchTerm": [
               "The searchTerm field is required."
@@ -195,12 +195,12 @@
         "status_code": 400,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "4.9747"
+          "X-Response-Time-ms": "1.3654"
         },
         "body": {
           "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
@@ -211,16 +211,23 @@
               "The searchTerm field is required."
             ]
           },
-          "traceId": "00-d13a24136459d69f6151b67363241b8c-4ef3d0b092ec0d56-00"
+          "traceId": "00-c333848274db5178b6f24be1a0f92abd-e32798133de8ccf6-00"
         }
       },
       "diffs": [
         {
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
-          "v1_value": "3",
-          "v2_value": "4.9747",
+          "v1_value": "2",
+          "v2_value": "1.3654",
           "message": "Header 'X-Response-Time-ms' value mismatch"
+        },
+        {
+          "category": "VALUE_MISMATCH",
+          "path": "$.traceId",
+          "v1_value": "00-785f0fdae212560d79911824da2bb99e-c81785c7577d8597-00",
+          "v2_value": "00-c333848274db5178b6f24be1a0f92abd-e32798133de8ccf6-00",
+          "message": "Value mismatch at $.traceId: '00-785f0fdae212560d79911824da2bb99e-c81785c7577d8597-00' vs '00-c333848274db5178b6f24be1a0f92abd-e32798133de8ccf6-00'"
         },
         {
           "category": "VALUE_MISMATCH",
@@ -228,13 +235,6 @@
           "v1_value": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
           "v2_value": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
           "message": "Value mismatch at $.type: 'https://tools.ietf.org/html/rfc7231#section-6.5.1' vs 'https://tools.ietf.org/html/rfc9110#section-15.5.1'"
-        },
-        {
-          "category": "VALUE_MISMATCH",
-          "path": "$.traceId",
-          "v1_value": "00-02c21755cf496a76d63f7d8aee333259-90ea02b3ab04d8ba-00",
-          "v2_value": "00-d13a24136459d69f6151b67363241b8c-4ef3d0b092ec0d56-00",
-          "message": "Value mismatch at $.traceId: '00-02c21755cf496a76d63f7d8aee333259-90ea02b3ab04d8ba-00' vs '00-d13a24136459d69f6151b67363241b8c-4ef3d0b092ec0d56-00'"
         }
       ]
     },
@@ -248,12 +248,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "2"
+          "X-Response-Time-ms": "1"
         },
         "body": {
           "SearchHints": [],
@@ -264,12 +264,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "11.4235"
+          "X-Response-Time-ms": "4.1832"
         },
         "body": {
           "SearchHints": [],
@@ -280,8 +280,8 @@
         {
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
-          "v1_value": "2",
-          "v2_value": "11.4235",
+          "v1_value": "1",
+          "v2_value": "4.1832",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         }
       ]
@@ -296,55 +296,7 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
-          "Server": "Kestrel",
-          "Content-Encoding": "gzip",
-          "Transfer-Encoding": "chunked",
-          "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "4"
-        },
-        "body": {
-          "SearchHints": [],
-          "TotalRecordCount": 0
-        }
-      },
-      "v109": {
-        "status_code": 200,
-        "headers": {
-          "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
-          "Server": "Kestrel",
-          "Content-Encoding": "gzip",
-          "Transfer-Encoding": "chunked",
-          "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "16.705"
-        },
-        "body": {
-          "SearchHints": [],
-          "TotalRecordCount": 0
-        }
-      },
-      "diffs": [
-        {
-          "category": "HEADER",
-          "path": "headers.X-Response-Time-ms",
-          "v1_value": "4",
-          "v2_value": "16.705",
-          "message": "Header 'X-Response-Time-ms' value mismatch"
-        }
-      ]
-    },
-    {
-      "id": "length-1000",
-      "params": {
-        "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "limit": 10
-      },
-      "v108": {
-        "status_code": 200,
-        "headers": {
-          "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:10 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
@@ -360,12 +312,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "9.9118"
+          "X-Response-Time-ms": "2.5539"
         },
         "body": {
           "SearchHints": [],
@@ -377,7 +329,55 @@
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
           "v1_value": "2",
-          "v2_value": "9.9118",
+          "v2_value": "2.5539",
+          "message": "Header 'X-Response-Time-ms' value mismatch"
+        }
+      ]
+    },
+    {
+      "id": "length-1000",
+      "params": {
+        "searchTerm": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "limit": 10
+      },
+      "v108": {
+        "status_code": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
+          "Server": "Kestrel",
+          "Content-Encoding": "gzip",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Response-Time-ms": "1"
+        },
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "v109": {
+        "status_code": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
+          "Server": "Kestrel",
+          "Content-Encoding": "gzip",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Response-Time-ms": "2.5007"
+        },
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "diffs": [
+        {
+          "category": "HEADER",
+          "path": "headers.X-Response-Time-ms",
+          "v1_value": "1",
+          "v2_value": "2.5007",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         }
       ]
@@ -392,12 +392,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "3"
+          "X-Response-Time-ms": "0"
         },
         "body": {
           "SearchHints": [],
@@ -408,12 +408,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "9.9663"
+          "X-Response-Time-ms": "3.0274"
         },
         "body": {
           "SearchHints": [],
@@ -424,8 +424,8 @@
         {
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
-          "v1_value": "3",
-          "v2_value": "9.9663",
+          "v1_value": "0",
+          "v2_value": "3.0274",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         }
       ]
@@ -440,7 +440,7 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
@@ -456,12 +456,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "10.2702"
+          "X-Response-Time-ms": "2.3047"
         },
         "body": {
           "SearchHints": [],
@@ -473,7 +473,7 @@
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
           "v1_value": "1",
-          "v2_value": "10.2702",
+          "v2_value": "2.3047",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         }
       ]
@@ -488,7 +488,55 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
+          "Server": "Kestrel",
+          "Content-Encoding": "gzip",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Response-Time-ms": "0"
+        },
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "v109": {
+        "status_code": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
+          "Server": "Kestrel",
+          "Content-Encoding": "gzip",
+          "Transfer-Encoding": "chunked",
+          "Vary": "Accept-Encoding",
+          "X-Response-Time-ms": "3.3469"
+        },
+        "body": {
+          "SearchHints": [],
+          "TotalRecordCount": 0
+        }
+      },
+      "diffs": [
+        {
+          "category": "HEADER",
+          "path": "headers.X-Response-Time-ms",
+          "v1_value": "0",
+          "v2_value": "3.3469",
+          "message": "Header 'X-Response-Time-ms' value mismatch"
+        }
+      ]
+    },
+    {
+      "id": "html-like",
+      "params": {
+        "searchTerm": "<script>alert(\"xss\")</script>",
+        "limit": 10
+      },
+      "v108": {
+        "status_code": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8",
+          "Date": "Sun, 18 Oct 2026 03:43:18 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
@@ -504,12 +552,12 @@
         "status_code": 200,
         "headers": {
           "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
+          "Date": "Sun, 18 Oct 2026 03:43:17 GMT",
           "Server": "Kestrel",
           "Content-Encoding": "gzip",
           "Transfer-Encoding": "chunked",
           "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "5.8487"
+          "X-Response-Time-ms": "4.5911"
         },
         "body": {
           "SearchHints": [],
@@ -521,55 +569,7 @@
           "category": "HEADER",
           "path": "headers.X-Response-Time-ms",
           "v1_value": "1",
-          "v2_value": "5.8487",
-          "message": "Header 'X-Response-Time-ms' value mismatch"
-        }
-      ]
-    },
-    {
-      "id": "html-like",
-      "params": {
-        "searchTerm": "<script>alert(\"xss\")</script>",
-        "limit": 10
-      },
-      "v108": {
-        "status_code": 200,
-        "headers": {
-          "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
-          "Server": "Kestrel",
-          "Content-Encoding": "gzip",
-          "Transfer-Encoding": "chunked",
-          "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "3"
-        },
-        "body": {
-          "SearchHints": [],
-          "TotalRecordCount": 0
-        }
-      },
-      "v109": {
-        "status_code": 200,
-        "headers": {
-          "Content-Type": "application/json; charset=utf-8",
-          "Date": "Mon, 12 Oct 2026 10:22:11 GMT",
-          "Server": "Kestrel",
-          "Content-Encoding": "gzip",
-          "Transfer-Encoding": "chunked",
-          "Vary": "Accept-Encoding",
-          "X-Response-Time-ms": "12.7122"
-        },
-        "body": {
-          "SearchHints": [],
-          "TotalRecordCount": 0
-        }
-      },
-      "diffs": [
-        {
-          "category": "HEADER",
-          "path": "headers.X-Response-Time-ms",
-          "v1_value": "3",
-          "v2_value": "12.7122",
+          "v2_value": "4.5911",
           "message": "Header 'X-Response-Time-ms' value mismatch"
         }
       ]

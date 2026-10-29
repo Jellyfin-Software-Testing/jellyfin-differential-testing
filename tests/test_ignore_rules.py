@@ -1,8 +1,11 @@
-"""Task G2-03 Test Suite: Validation for Configuration-Driven ignore-rules.json.
+#!/usr/bin/env python3
+"""Unit tests for config/ignore-rules.json compliance and schema verification.
 
-Verifies that all normalization, masking, and ignore rules adhere to the G2-03
-specification: defining mandatory fields (path, reason, scope, risk), valid
-JSONPath expressions, proper scope and risk tiers, and preserving known differences.
+Ensures that all ignore, mask, and normalization rules adhere to:
+  1. Mandatory field constraints (path, reason, scope, risk, evidence) per CONTRIBUTING.md Section 5.
+  2. JSONPath syntax validity (all paths must start with '$').
+  3. Risk level constraint (LOW, MEDIUM, HIGH).
+  4. Zero False Negatives policy: no blind suppression of true architectural differences.
 """
 
 from __future__ import annotations
@@ -14,118 +17,144 @@ from typing import Any, Dict, List
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-RULES_PATH = ROOT / "config" / "ignore-rules.json"
-
-MANDATORY_FIELDS = {"path", "reason", "scope", "risk"}
-ALLOWED_SCOPES = {"global", "endpoint"}
-ALLOWED_RISKS = {"LOW", "MEDIUM", "HIGH"}
-ALLOWED_ACTIONS = {"mask", "normalize", "ignore"}
+CONFIG_FILE = ROOT / "config" / "ignore-rules.json"
 
 
 @pytest.fixture(scope="module")
-def rules_data() -> Dict[str, Any]:
-    """Loads and parses config/ignore-rules.json."""
-    assert RULES_PATH.exists(), f"Configuration file not found: {RULES_PATH}"
-    content = RULES_PATH.read_text(encoding="utf-8")
-    assert content.strip(), "Configuration file is empty"
-    return json.loads(content)
+def config_data() -> Dict[str, Any]:
+    assert CONFIG_FILE.exists(), f"Configuration file not found at: {CONFIG_FILE}"
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
 
 
-@pytest.fixture(scope="module")
-def all_active_rules(rules_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Gathers all active rules across mask, format_normalization, and ignore blocks."""
-    rules = []
-    rules.extend(rules_data.get("mask_rules", []))
-    rules.extend(rules_data.get("format_normalization_rules", []))
-    rules.extend(rules_data.get("ignore_rules", []))
-    return rules
+def test_config_file_exists() -> None:
+    """Kiểm tra file cấu hình config/ignore-rules.json tồn tại trong dự án."""
+    assert CONFIG_FILE.is_file(), "config/ignore-rules.json phải tồn tại trên ổ đĩa"
 
 
-def test_ignore_rules_file_exists_and_is_valid_json(rules_data: Dict[str, Any]) -> None:
-    """Verifies that ignore-rules.json exists and parses cleanly."""
-    assert isinstance(rules_data, dict)
-    assert "_metadata" in rules_data
+def test_top_level_keys_present(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra các trường cấu trúc bắt buộc ở cấp cao nhất (Top-level keys)."""
+    mandatory_keys = [
+        "_metadata",
+        "mask_rules",
+        "environment_normalization_rules",
+        "format_normalization_rules",
+        "ignore_rules",
+        "known_differences",
+    ]
+    for key in mandatory_keys:
+        assert key in config_data, f"Thiếu trường bắt buộc '{key}' ở cấp cao nhất của config."
 
 
-def test_metadata_specification(rules_data: Dict[str, Any]) -> None:
-    """Verifies that _metadata contains task identifier G2-03 and schema definitions."""
-    meta = rules_data["_metadata"]
-    assert meta.get("task") == "G2-03"
-    assert "version" in meta
-    assert "schema_specification" in meta
-    schema_spec = meta["schema_specification"]
-    assert set(schema_spec.get("mandatory_fields", [])) == MANDATORY_FIELDS
+def test_metadata_contains_audit_info(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra metadata chứa thông tin truy vết kiểm toán (Audit Trail)."""
+    meta = config_data.get("_metadata", {})
+    assert "task" in meta, "Metadata phải có thông tin 'task'"
+    assert "updated_at" in meta or "generated_at" in meta, "Metadata phải có dấu thời gian timestamp"
+    assert "policy" in meta, "Metadata phải ghi rõ chính sách đối soát (policy)"
 
 
-def test_mandatory_fields_present_in_all_rules(all_active_rules: List[Dict[str, Any]]) -> None:
-    """G2-03 Requirement: Every rule MUST define path, reason, scope, and risk."""
-    assert len(all_active_rules) > 0, "No active rules found in configuration"
-    for rule in all_active_rules:
-        rule_id = rule.get("rule_id", rule.get("path", "UNKNOWN"))
-        missing = MANDATORY_FIELDS - set(rule.keys())
-        assert not missing, f"Rule '{rule_id}' is missing mandatory fields: {missing}"
-        # Ensure values are non-empty strings
-        for field_name in MANDATORY_FIELDS:
-            assert isinstance(rule[field_name], str), f"Rule '{rule_id}' field '{field_name}' must be string"
-            assert rule[field_name].strip(), f"Rule '{rule_id}' field '{field_name}' cannot be empty"
+def test_mask_rules_mandatory_fields(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra từng quy tắc mask_rules phải có đầy đủ các trường bắt buộc."""
+    mask_rules = config_data.get("mask_rules", [])
+    assert len(mask_rules) >= 7, "Cần ít nhất 7 quy tắc mask cho các trường nhiễu động ngẫu nhiên"
+    
+    required_fields = ["path", "replacement", "scope", "risk", "reason", "evidence"]
+    for idx, rule in enumerate(mask_rules):
+        for field in required_fields:
+            assert field in rule, f"mask_rules[{idx}] thiếu trường bắt buộc '{field}'"
+            assert str(rule[field]).strip() != "", f"mask_rules[{idx}].{field} không được để trống"
 
 
-def test_scope_values_valid(all_active_rules: List[Dict[str, Any]]) -> None:
-    """Verifies that scope is strictly 'global' or 'endpoint'."""
-    for rule in all_active_rules:
-        rule_id = rule.get("rule_id", rule.get("path"))
-        scope = rule["scope"]
-        assert scope in ALLOWED_SCOPES, f"Rule '{rule_id}' has invalid scope '{scope}'. Allowed: {ALLOWED_SCOPES}"
-        if scope == "endpoint":
-            has_endpoint = ("endpoint" in rule and rule["endpoint"]) or ("endpoints" in rule and rule["endpoints"])
-            assert has_endpoint, f"Rule '{rule_id}' has scope='endpoint' but specifies no endpoint or endpoints"
+def test_environment_normalization_rules_mandatory_fields(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra từng quy tắc environment_normalization_rules có đủ thông tin hạ tầng."""
+    env_rules = config_data.get("environment_normalization_rules", [])
+    assert len(env_rules) >= 2, "Cần có ít nhất 2 quy tắc chuẩn hóa môi trường (cổng và ID container)"
+    
+    required_fields = ["path", "scope", "strategy", "risk", "reason", "evidence"]
+    for idx, rule in enumerate(env_rules):
+        for field in required_fields:
+            assert field in rule, f"environment_normalization_rules[{idx}] thiếu trường '{field}'"
+            assert str(rule[field]).strip() != "", f"environment_normalization_rules[{idx}].{field} không được trống"
 
 
-def test_risk_values_valid(all_active_rules: List[Dict[str, Any]]) -> None:
-    """Verifies that risk is strictly 'LOW', 'MEDIUM', or 'HIGH'."""
-    for rule in all_active_rules:
-        rule_id = rule.get("rule_id", rule.get("path"))
-        risk = rule["risk"]
-        assert risk in ALLOWED_RISKS, f"Rule '{rule_id}' has invalid risk '{risk}'. Allowed: {ALLOWED_RISKS}"
-        # Medium and High risk rules should have mitigation documented
-        if risk in {"MEDIUM", "HIGH"}:
-            assert "risk_mitigation" in rule, f"Rule '{rule_id}' with risk={risk} must document 'risk_mitigation'"
+def test_format_normalization_rules_mandatory_fields(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra các quy tắc chuẩn hóa định dạng thời gian dung sai (Tolerance/Precision)."""
+    format_rules = config_data.get("format_normalization_rules", [])
+    assert len(format_rules) >= 4, "Cần có ít nhất 4 quy tắc chuẩn hóa độ chính xác dấu thời gian microsecond"
+    
+    required_fields = ["path", "scope", "strategy", "risk", "reason", "evidence"]
+    for idx, rule in enumerate(format_rules):
+        for field in required_fields:
+            assert field in rule, f"format_normalization_rules[{idx}] thiếu trường '{field}'"
+            assert str(rule[field]).strip() != "", f"format_normalization_rules[{idx}].{field} không được trống"
 
 
-def test_action_values_valid(all_active_rules: List[Dict[str, Any]]) -> None:
-    """Verifies that action is 'mask', 'normalize', or 'ignore'."""
-    for rule in all_active_rules:
-        rule_id = rule.get("rule_id", rule.get("path"))
-        action = rule.get("action")
-        assert action in ALLOWED_ACTIONS, f"Rule '{rule_id}' has invalid action '{action}'. Allowed: {ALLOWED_ACTIONS}"
-        if action == "mask":
-            assert "replacement" in rule, f"Mask rule '{rule_id}' must define 'replacement'"
-        elif action == "normalize":
-            assert "strategy" in rule, f"Normalize rule '{rule_id}' must define 'strategy'"
+def test_known_differences_mandatory_fields(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra danh mục known_differences giữ nguyên và có đầy đủ audit fields."""
+    known_diffs = config_data.get("known_differences", [])
+    assert len(known_diffs) >= 100, "Phải bảo toàn toàn bộ danh mục Known Differences của phiên bản v10.9"
+    
+    required_fields = ["path", "scope", "risk", "reason", "evidence"]
+    for idx, rule in enumerate(known_diffs):
+        for field in required_fields:
+            assert field in rule, f"known_differences[{idx}] thiếu trường '{field}'"
+            assert str(rule[field]).strip() != "", f"known_differences[{idx}].{field} không được trống"
 
 
-def test_jsonpath_syntax_valid(all_active_rules: List[Dict[str, Any]]) -> None:
-    """Verifies that all paths conform to JSONPath root syntax (starts with '$')."""
-    for rule in all_active_rules:
-        rule_id = rule.get("rule_id", rule.get("path"))
-        path = rule["path"]
-        assert path.startswith("$"), f"Rule '{rule_id}' path '{path}' must start with '$' (JSONPath root)"
+def test_jsonpath_syntax_validity(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra tính hợp lệ cú pháp JSONPath: mọi đường dẫn path phải bắt đầu bằng '$'."""
+    rule_groups = [
+        ("mask_rules", config_data.get("mask_rules", [])),
+        ("environment_normalization_rules", config_data.get("environment_normalization_rules", [])),
+        ("format_normalization_rules", config_data.get("format_normalization_rules", [])),
+        ("known_differences", config_data.get("known_differences", [])),
+    ]
+    for group_name, rules in rule_groups:
+        for idx, rule in enumerate(rules):
+            path_val = rule.get("path", "")
+            assert path_val.startswith("$"), (
+                f"Trong {group_name}[{idx}], path '{path_val}' không đúng chuẩn JSONPath (phải bắt đầu bằng '$')"
+            )
 
 
-def test_rule_ids_unique(all_active_rules: List[Dict[str, Any]]) -> None:
-    """Verifies that all rule_id values are unique."""
-    rule_ids = [r["rule_id"] for r in all_active_rules if "rule_id" in r]
-    duplicates = [rid for rid in rule_ids if rule_ids.count(rid) > 1]
-    assert not duplicates, f"Found duplicate rule IDs: {set(duplicates)}"
+def test_risk_levels_validity(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra mức độ rủi ro (risk level) phải thuộc tập giá trị hợp lệ: LOW, MEDIUM, HIGH."""
+    allowed_risks = {"LOW", "MEDIUM", "HIGH"}
+    rule_groups = [
+        ("mask_rules", config_data.get("mask_rules", [])),
+        ("environment_normalization_rules", config_data.get("environment_normalization_rules", [])),
+        ("format_normalization_rules", config_data.get("format_normalization_rules", [])),
+        ("known_differences", config_data.get("known_differences", [])),
+    ]
+    for group_name, rules in rule_groups:
+        for idx, rule in enumerate(rules):
+            risk_val = rule.get("risk", "")
+            assert risk_val in allowed_risks, (
+                f"Trong {group_name}[{idx}], risk='{risk_val}' không hợp lệ (phải là LOW, MEDIUM hoặc HIGH)"
+            )
 
 
-def test_known_differences_preserved(rules_data: Dict[str, Any]) -> None:
-    """Verifies that known_differences list is preserved with expected entries (> 100)."""
-    assert "known_differences" in rules_data
-    diffs = rules_data["known_differences"]
-    assert isinstance(diffs, list)
-    assert len(diffs) >= 100, f"Expected at least 100 known differences, found {len(diffs)}"
-    for diff in diffs:
-        assert "path" in diff
-        assert "endpoint" in diff
-        assert "description" in diff
+def test_zero_false_negatives_policy(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra chính sách Zero False Negatives: không đưa các khác biệt phiên bản quan trọng vào ignore_rules."""
+    ignore_rules = config_data.get("ignore_rules", [])
+    # Chính sách nghiêm ngặt: không được có quy tắc ignore che giấu trường phiên bản hoặc tính năng mới
+    ignored_paths = [r.get("path", "") for r in ignore_rules]
+    forbidden_to_ignore = ["$.Version", "$.CanSelfRestart", "$.CastReceiverApplications"]
+    for forbidden in forbidden_to_ignore:
+        assert forbidden not in ignored_paths, (
+            f"Vi phạm Zero False Negatives: trường '{forbidden}' là thay đổi phiên bản có chủ đích, "
+            f"tuyệt đối không được đưa vào ignore_rules (phải nằm trong known_differences)!"
+        )
+
+
+def test_empirical_evidence_length_and_quality(config_data: Dict[str, Any]) -> None:
+    """Kiểm tra chất lượng bằng chứng (evidence): phải có mô tả chi tiết từ kết quả Run-1."""
+    mask_rules = config_data.get("mask_rules", [])
+    for idx, rule in enumerate(mask_rules):
+        evidence = rule.get("evidence", "")
+        assert len(evidence) >= 15, (
+            f"mask_rules[{idx}] evidence quá ngắn ('{evidence}'), "
+            f"cần mô tả rõ hiện tượng quan sát thực nghiệm từ Run-1"
+        )

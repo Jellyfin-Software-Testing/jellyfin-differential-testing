@@ -17,10 +17,72 @@ if str(ROOT) not in sys.path:
 
 from models.user_data_model import FavoriteAction, FavoriteState, UserDataTestModel
 from scripts.G1_06_setup_and_verify import JellyfinClient, Server, SetupError
+from scripts.db_validator import validate_favorite_state
 
 DEFAULT_ITEM_NAME = "01 - Reference Tone"
 DEFAULT_ITEM_TYPE = "Audio"
 DEFAULT_REPORT = ROOT / "docs" / "evidence" / "G2-15-user-state-favorites.json"
+
+DB_PATHS_BY_VERSION: dict[str, tuple[Path, Path]] = {
+    "v10.8.13": (
+        ROOT / "docker" / "v10.8" / "config" / "data" / "jellyfin.db",
+        ROOT / "docker" / "v10.8" / "config" / "data" / "library.db",
+    ),
+    "v10.9.0": (
+        ROOT / "docker" / "v10.9" / "config" / "data" / "jellyfin.db",
+        ROOT / "docker" / "v10.9" / "config" / "data" / "library.db",
+    ),
+}
+
+
+def record_db_validation(
+    instance_record: dict[str, Any],
+    client: JellyfinClient,
+    step: str,
+    user_id: str,
+    item_id: str,
+    api_state: dict[str, bool],
+) -> bool:
+    """Run DB validation against persistent SQLite state and append to instance evidence."""
+    paths = DB_PATHS_BY_VERSION.get(client.server.label)
+    if paths is None:
+        for ver_key, ver_paths in DB_PATHS_BY_VERSION.items():
+            if ver_key in client.server.label:
+                paths = ver_paths
+                break
+    if paths is None:
+        val_entry = {
+            "passed": False,
+            "step": step,
+            "api_is_favorite": api_state.get("is_favorite") if isinstance(api_state, dict) else None,
+            "api_in_favorites": api_state.get("in_favorites") if isinstance(api_state, dict) else None,
+            "internal_id": None,
+            "user_data_key": None,
+            "row_counts": {
+                "user_by_id": None,
+                "item_by_guid": None,
+                "items_by_user_data_key": None,
+                "user_data": None,
+            },
+            "db_is_favorite": None,
+            "mismatch_codes": [],
+            "error": {
+                "code": "DB_CONFIG_ERROR",
+                "stage": "db_open",
+                "message": f"No DB paths configured for server {client.server.label}",
+            },
+        }
+        instance_record.setdefault("db_validation", []).append(val_entry)
+        return False
+
+    val_result = validate_favorite_state(paths[0], paths[1], user_id, item_id, api_state)
+    val_entry = dict(val_result)
+    val_entry["step"] = step
+    val_entry["api_is_favorite"] = api_state.get("is_favorite") if isinstance(api_state, dict) else None
+    val_entry["api_in_favorites"] = api_state.get("in_favorites") if isinstance(api_state, dict) else None
+    instance_record.setdefault("db_validation", []).append(val_entry)
+    return bool(val_result.get("passed", False))
+
 
 
 def find_seed_item(
@@ -141,6 +203,7 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
         "cleanup": {"status": "skipped"},
         "success": False,
         "error": None,
+        "db_validation": [],
     }
 
     baseline_is_fav: bool | None = None
@@ -148,6 +211,8 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
     try:
         # Precondition: read initial state
         initial_state = read_state(client, user_id, item_id)
+        if not record_db_validation(instance_record, client, "initial_state", user_id, item_id, initial_state):
+            raise SetupError(f"{client.server.label}: initial_state DB validation failed")
         instance_record["original_state"] = initial_state
 
         if initial_state["is_favorite"] != initial_state["in_favorites"]:
@@ -162,6 +227,8 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
         if baseline_is_fav:
             favorite_request(client, FavoriteAction.UNMARK_FAVORITE, user_id, item_id)
             norm_state = read_state(client, user_id, item_id)
+            if not record_db_validation(instance_record, client, "normalize_initial", user_id, item_id, norm_state):
+                raise SetupError(f"{client.server.label}: normalize_initial DB validation failed")
             if norm_state["is_favorite"] or norm_state["in_favorites"]:
                 raise SetupError(f"{client.server.label}: failed to normalize initial state to unfavorited")
             instance_record["normalize_initial"] = {
@@ -183,6 +250,8 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
 
         # 2. verify_favorite
         fav_state = read_state(client, user_id, item_id)
+        if not record_db_validation(instance_record, client, "verify_favorite", user_id, item_id, fav_state):
+            raise SetupError(f"{client.server.label}: verify_favorite DB validation failed")
         is_valid_fav = fav_state["is_favorite"] and fav_state["in_favorites"]
         instance_record["steps"]["verify_favorite"] = {
             "status": "passed" if is_valid_fav else "failed",
@@ -202,6 +271,8 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
 
         # 4. verify_unfavorite
         unfav_state = read_state(client, user_id, item_id)
+        if not record_db_validation(instance_record, client, "verify_unfavorite", user_id, item_id, unfav_state):
+            raise SetupError(f"{client.server.label}: verify_unfavorite DB validation failed")
         is_valid_unfav = not (unfav_state["is_favorite"] or unfav_state["in_favorites"])
         instance_record["steps"]["verify_unfavorite"] = {
             "status": "passed" if is_valid_unfav else "failed",
@@ -222,8 +293,11 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
         if baseline_is_fav is not None:
             if hasattr(client, "cleanup_phase"):
                 client.cleanup_phase = True
+            cleanup_db_failed = False
             try:
                 curr_state = read_state(client, user_id, item_id)
+                if not record_db_validation(instance_record, client, "cleanup", user_id, item_id, curr_state):
+                    cleanup_db_failed = True
                 needs_restore = (
                     curr_state["is_favorite"] != baseline_is_fav
                     or curr_state["in_favorites"] != baseline_is_fav
@@ -234,6 +308,10 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                     )
                     favorite_request(client, restore_action, user_id, item_id)
                     restored_state = read_state(client, user_id, item_id)
+                    if not record_db_validation(
+                        instance_record, client, "cleanup_restored", user_id, item_id, restored_state
+                    ):
+                        cleanup_db_failed = True
                     if (
                         restored_state["is_favorite"] != baseline_is_fav
                         or restored_state["in_favorites"] != baseline_is_fav
@@ -241,7 +319,13 @@ def run_instance(client: JellyfinClient, user_id: str, seed: dict[str, str]) -> 
                         raise SetupError(
                             f"{client.server.label}: failed to restore baseline state to {baseline_is_fav} (got {restored_state})"
                         )
-                instance_record["cleanup"] = {"status": "passed", "restored_to": baseline_is_fav}
+                if cleanup_db_failed:
+                    instance_record["cleanup"] = {"status": "failed", "error": "cleanup DB validation failed"}
+                    instance_record["success"] = False
+                    if not instance_record["error"]:
+                        instance_record["error"] = "cleanup DB validation failed"
+                else:
+                    instance_record["cleanup"] = {"status": "passed", "restored_to": baseline_is_fav}
             except Exception as clean_exc:
                 instance_record["cleanup"] = {"status": "failed", "error": str(clean_exc)}
                 instance_record["success"] = False
