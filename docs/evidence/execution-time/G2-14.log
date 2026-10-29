@@ -1,0 +1,4 @@
+G2-14 success: filter parity matches with full coverage.
+real 0.26
+user 0.09
+sys 0.02

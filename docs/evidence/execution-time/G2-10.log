@@ -1,0 +1,4 @@
+G2-10 success: state invariants are equivalent after every step.
+real 0.67
+user 0.20
+sys 0.02
