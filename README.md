@@ -24,7 +24,7 @@ py -3 -m venv .venv
 python -m pip install -r requirements.txt
 docker compose -f docker/docker-compose.yml up -d
 python -m pytest -q
-python scripts/g1_06_setup_and_verify.py
+python scripts/G1_06_setup_and_verify.py
 ```
 
 Kết quả đúng phải kết thúc bằng:
@@ -55,7 +55,7 @@ container test cục bộ. Có thể đặt biến `JELLYFIN_ADMIN_PASSWORD` tr�
 Khi state hiện có đã đúng, chỉ cần chạy lại:
 
 ```powershell
-python scripts/g1_06_setup_and_verify.py
+python scripts/G1_06_setup_and_verify.py
 ```
 
 Nếu script báo state cũ khác manifest, dừng containers trước:
@@ -74,3 +74,10 @@ Sau đó chỉ xoá bốn thư mục runtime sau rồi chạy lại phần **L�
 Không xoá `data/seed-data`, vì đây là seed dataset dùng chung của hai server.
 
 Chi tiết kỹ thuật và các field được so sánh: `docs/G1-06-setup-wizard-and-initial-seeding.md`.
+
+## G2-23A: Replay kết quả kiểm thử
+
+Sau khi G1-06 đã tạo state tương đương, G2-23A cho phép lưu TestID, seed,
+request và fingerprint môi trường của một khác biệt đã quan sát; chạy lại để đo
+tỷ lệ tái hiện thay vì mặc định lỗi nào cũng tái hiện được. Xem hướng dẫn và
+ví dụ chạy tại [docs/G2-23A-deterministic-replay.md](docs/G2-23A-deterministic-replay.md).

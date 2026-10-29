@@ -1,0 +1,28 @@
+{
+  "environment": {
+    "expected_versions": {
+      "baseline": "10.8.13",
+      "candidate": "10.9.0"
+    },
+    "initial_state_evidence_sha256": "8dcbdf5e829be29ee94885523111296abe95041eb484e41dc526f87fa47e7ab1",
+    "normalization_rules_sha256": "3a84dfd5e615fe2d249a65648cc7d53c3c18a47895060f5ada573e4e64df49db",
+    "seed_manifest_sha256": "6e6028efe5f98fd21fa6dc8f4acfe76052e1ccb77da3bfc9291197f724828fd9",
+    "seed_state_sha256": "9da09954e01d33e077305fe8e84249b4cfa9809b3e36b3eb7543cf60946bf7d5"
+  },
+  "failure_signature": {
+    "category": "VALUE_MISMATCH",
+    "path": "$.Version",
+    "v1_sha256": "14b6f3141e21dc625fd6e4fec0bfd55666cd437f2ce29d7e4e42cc9c7d8b4040",
+    "v2_sha256": "5e27d42624a819393aa6ac92fc899b3d0215eaf1dcd17ffb0161cecc75294c0a"
+  },
+  "request": {
+    "json_body": null,
+    "method": "GET",
+    "params": {},
+    "path": "/System/Info/Public"
+  },
+  "request_input_sha256": "de963ce82e87b23b75ef803699f1b0a4815298d1780d1d457e925f57c9844449",
+  "schema_version": 1,
+  "seed": 20261018,
+  "test_id": "G2-23A-public-version-demo"
+}

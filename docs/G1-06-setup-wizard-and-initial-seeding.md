@@ -12,7 +12,7 @@ requests are sent. Version and server IDs are intentionally not compared.
   at `/media`; therefore their input bytes cannot drift.
 - `data/dataset-manifest.json` describes two deterministic PCM/WAV fixtures, the
   first-run wizard configuration and the seed music library.
-- `scripts/g1_06_setup_and_verify.py` creates (or verifies) the fixtures, completes
+- `scripts/G1_06_setup_and_verify.py` creates (or verifies) the fixtures, completes
   the Setup Wizard on a fresh server, creates the library, requests a scan and
   compares a normalised state.
 - Before comparing the two responses, the runner also validates each response
@@ -30,7 +30,7 @@ Start the services from the repository root:
 ```powershell
 docker compose -f docker/docker-compose.yml up -d
 py -3 -m pip install -r requirements.txt
-py -3 scripts/g1_06_setup_and_verify.py
+py -3 scripts/G1_06_setup_and_verify.py
 ```
 
 The runner uses the existing development credential `admin` / `admin123456` by

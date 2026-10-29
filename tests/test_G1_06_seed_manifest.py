@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "g1_06_setup_and_verify.py"
+RUNNER = ROOT / "scripts" / "G1_06_setup_and_verify.py"
 
 
 def load_runner_module():

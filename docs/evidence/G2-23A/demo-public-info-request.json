@@ -1,0 +1,6 @@
+{
+  "method": "GET",
+  "path": "/System/Info/Public",
+  "params": {},
+  "json_body": null
+}
