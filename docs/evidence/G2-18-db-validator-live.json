@@ -1,0 +1,305 @@
+{
+  "task": "G2-15",
+  "status": "passed",
+  "parity": "equivalent",
+  "parity_diffs": [],
+  "instances": {
+    "v10.8.13": {
+      "server": "v10.8.13",
+      "seed_id": "b730f9fd841b9789262f9b84d119e58e",
+      "original_state": {
+        "is_favorite": true,
+        "in_favorites": true
+      },
+      "normalize_initial": {
+        "action": "DELETE",
+        "status": "passed",
+        "state_after": {
+          "is_favorite": false,
+          "in_favorites": false
+        }
+      },
+      "steps": {
+        "post_favorite": {
+          "status": "passed",
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "verify_favorite": {
+          "status": "passed",
+          "is_favorite": true,
+          "in_favorites": true
+        },
+        "delete_favorite": {
+          "status": "passed",
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "verify_unfavorite": {
+          "status": "passed",
+          "is_favorite": false,
+          "in_favorites": false
+        }
+      },
+      "cleanup": {
+        "status": "passed",
+        "restored_to": true
+      },
+      "success": true,
+      "error": null,
+      "db_validation": [
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": true,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "initial_state",
+          "api_is_favorite": true,
+          "api_in_favorites": true,
+          "snapshot_mode": "offline_server_stopped"
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "normalize_initial",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "offline_server_stopped"
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": true,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "verify_favorite",
+          "api_is_favorite": true,
+          "api_in_favorites": true,
+          "snapshot_mode": "offline_server_stopped"
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "verify_unfavorite",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "offline_server_stopped"
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "cleanup",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "offline_server_stopped"
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": true,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "cleanup_restored",
+          "api_is_favorite": true,
+          "api_in_favorites": true,
+          "snapshot_mode": "offline_server_stopped"
+        }
+      ]
+    },
+    "v10.9.0": {
+      "server": "v10.9.0",
+      "seed_id": "b730f9fd841b9789262f9b84d119e58e",
+      "original_state": {
+        "is_favorite": false,
+        "in_favorites": false
+      },
+      "normalize_initial": {
+        "skipped": true,
+        "status": "passed"
+      },
+      "steps": {
+        "post_favorite": {
+          "status": "passed",
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": true,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "verify_favorite": {
+          "status": "passed",
+          "is_favorite": true,
+          "in_favorites": true
+        },
+        "delete_favorite": {
+          "status": "passed",
+          "status_code": 200,
+          "body": {
+            "PlaybackPositionTicks": 0,
+            "PlayCount": 0,
+            "IsFavorite": false,
+            "Played": false,
+            "Key": "01 - Reference Tone"
+          }
+        },
+        "verify_unfavorite": {
+          "status": "passed",
+          "is_favorite": false,
+          "in_favorites": false
+        }
+      },
+      "cleanup": {
+        "status": "passed",
+        "restored_to": false
+      },
+      "success": true,
+      "error": null,
+      "db_validation": [
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "initial_state",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "live_wal",
+          "wal_sidecars_present": true
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": true,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "verify_favorite",
+          "api_is_favorite": true,
+          "api_in_favorites": true,
+          "snapshot_mode": "live_wal",
+          "wal_sidecars_present": true
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "verify_unfavorite",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "live_wal",
+          "wal_sidecars_present": true
+        },
+        {
+          "passed": true,
+          "internal_id": 1,
+          "user_data_key": "01 - Reference Tone",
+          "row_counts": {
+            "user_by_id": 1,
+            "item_by_guid": 1,
+            "items_by_user_data_key": 1,
+            "user_data": 1
+          },
+          "db_is_favorite": false,
+          "mismatch_codes": [],
+          "error": null,
+          "step": "cleanup",
+          "api_is_favorite": false,
+          "api_in_favorites": false,
+          "snapshot_mode": "live_wal",
+          "wal_sidecars_present": true
+        }
+      ]
+    }
+  },
+  "error": null
+}
