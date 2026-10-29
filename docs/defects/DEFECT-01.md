@@ -131,7 +131,7 @@ curl -i -s -X GET "http://localhost:8097/Dlna/ProfileInfos" \
 
 ### 4.2. Minh Chứng Dữ Liệu Thô (Raw Evidence Artifact):
 File minh chứng kết quả đo đạc thực nghiệm độc lập được lưu trữ và kiểm toán tự động tại:
-👉 [`docs/evidence/G2_27/live-defect-1-evidence.json`](../evidence/G2_27/live-defect-1-evidence.json)
+[`docs/evidence/G2_27/live-defect-1-evidence.json`](../evidence/G2_27/live-defect-1-evidence.json)
 
 ---
 

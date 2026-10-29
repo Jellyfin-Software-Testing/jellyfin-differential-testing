@@ -1,0 +1,16 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.1.1, pluggy-1.7.0
+rootdir: /media/thanhhien/Volume D2/jellyfin-differential-testing
+configfile: pytest.ini
+plugins: hypothesis-6.100.0, html-4.1.1, metadata-3.1.1, xdist-3.5.0
+collected 5 items
+
+tests/test_G2_08_normalizer_diff_integration.py .....                    [100%]
+
+============================== slowest durations ===============================
+
+(15 durations < 0.005s hidden.  Use -vv to show these durations.)
+============================== 5 passed in 0.12s ===============================
+real 0.36
+user 0.26
+sys 0.04

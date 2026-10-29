@@ -1,0 +1,155 @@
+{
+  "defect_id": "DEFECT-01",
+  "endpoint": "GET /Dlna/ProfileInfos",
+  "baseline_v108": {
+    "target_url": "http://localhost:8096/Dlna/ProfileInfos",
+    "status_code": 200,
+    "reason": "OK",
+    "content_type": "application/json; charset=utf-8",
+    "body": [
+      {
+        "Id": "0548fdb9f519fe30bcdd862508a55844",
+        "Name": "Default",
+        "Type": "System"
+      },
+      {
+        "Id": "72c47176bfef7ca78a9c2ca52f55a94a",
+        "Name": "Denon AVR",
+        "Type": "System"
+      },
+      {
+        "Id": "04ef774262e6332fb27ebc4fae63dd46",
+        "Name": "DirecTV HD-DVR",
+        "Type": "System"
+      },
+      {
+        "Id": "facc89bf02c3e88128734d109a50913b",
+        "Name": "Dish Hopper-Joey",
+        "Type": "System"
+      },
+      {
+        "Id": "726d43872e36a343fcdddb306ec599d5",
+        "Name": "LG Smart TV",
+        "Type": "System"
+      },
+      {
+        "Id": "c059746e8b863affd02dac6a5b40180f",
+        "Name": "Linksys DMA2100",
+        "Type": "System"
+      },
+      {
+        "Id": "01ce375150854278f8bb113ceb7f12e9",
+        "Name": "Marantz",
+        "Type": "System"
+      },
+      {
+        "Id": "93dbd8b9471e9e11e73975ce12575f0b",
+        "Name": "MediaMonkey",
+        "Type": "System"
+      },
+      {
+        "Id": "c6e18eb28eba37b7c818b1eb775a226c",
+        "Name": "Panasonic Viera",
+        "Type": "System"
+      },
+      {
+        "Id": "2ec865d15b0a3b21b78816f31225d9a5",
+        "Name": "Popcorn Hour",
+        "Type": "System"
+      },
+      {
+        "Id": "db43959c2c11a41305c2e9608c2bf229",
+        "Name": "Samsung Smart TV",
+        "Type": "System"
+      },
+      {
+        "Id": "ecabf9b4f00c0c9cf02d7b273f1fdc1c",
+        "Name": "Sony Blu-ray Player",
+        "Type": "System"
+      },
+      {
+        "Id": "8f162cd51214dabdaacfb0df53915a84",
+        "Name": "Sony Blu-ray Player 2013",
+        "Type": "System"
+      },
+      {
+        "Id": "ac3d528971e51aa76c9c1b8c59f10503",
+        "Name": "Sony Blu-ray Player 2014",
+        "Type": "System"
+      },
+      {
+        "Id": "a86ad83d3ec553eb8b8faebb9cdfd0b3",
+        "Name": "Sony Blu-ray Player 2015",
+        "Type": "System"
+      },
+      {
+        "Id": "4d609bcad22a8fba6946b24e31d9c8fe",
+        "Name": "Sony Blu-ray Player 2016",
+        "Type": "System"
+      },
+      {
+        "Id": "87b89fd0d00704b40c75f6eab3fb6665",
+        "Name": "Sony Bravia (2010)",
+        "Type": "System"
+      },
+      {
+        "Id": "701146d39ab7f0e90f3bef53567c265a",
+        "Name": "Sony Bravia (2011)",
+        "Type": "System"
+      },
+      {
+        "Id": "ccf5ddc5db2fe132affe95c8c22d567a",
+        "Name": "Sony Bravia (2012)",
+        "Type": "System"
+      },
+      {
+        "Id": "579b4549b008d693240d651b253fe10c",
+        "Name": "Sony Bravia (2013)",
+        "Type": "System"
+      },
+      {
+        "Id": "25013c081a6ab5780637d8267e1c24f8",
+        "Name": "Sony Bravia (2014)",
+        "Type": "System"
+      },
+      {
+        "Id": "c97ebf85a45aba037004183e064d1bc5",
+        "Name": "Sony PlayStation 3",
+        "Type": "System"
+      },
+      {
+        "Id": "a14a1fc63d604d4fbc68e763f7059d01",
+        "Name": "Sony PlayStation 4",
+        "Type": "System"
+      },
+      {
+        "Id": "3b027061b26ddbc6e36362c75308bad8",
+        "Name": "WDTV Live",
+        "Type": "System"
+      },
+      {
+        "Id": "37a3ff2186d8f723b20fd76aa8ccdc9b",
+        "Name": "Xbox One",
+        "Type": "System"
+      },
+      {
+        "Id": "132913921efcb414432a0e6a5a79b44f",
+        "Name": "foobar2000",
+        "Type": "System"
+      }
+    ]
+  },
+  "target_v109": {
+    "target_url": "http://localhost:8097/Dlna/ProfileInfos",
+    "status_code": 404,
+    "reason": "Not Found",
+    "content_type": "",
+    "body": ""
+  },
+  "divergence_summary": {
+    "status_code_mismatch": "200 != 404",
+    "defect_type": "CONTRACT_BREAKING_ROUTE_REMOVED",
+    "root_cause": "DLNA subsystem removed from Jellyfin core in v10.9 (DlnaController removed)",
+    "confirmed_live": true
+  }
+}
