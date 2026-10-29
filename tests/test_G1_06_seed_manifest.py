@@ -21,9 +21,16 @@ def test_manifest_generates_deterministic_seed_media(tmp_path):
     runner = load_runner_module()
     manifest = json.loads((ROOT / "data" / "dataset-manifest.json").read_text())
 
+    assert len(manifest["files"]) == 100
+    relative_paths = [item["relativePath"] for item in manifest["files"]]
+    assert len(set(relative_paths)) == 100
+    assert "seed-music/01 - Reference Tone.wav" in relative_paths
+    assert "seed-music/02 - Comparison Tone.wav" in relative_paths
+
     first = runner.prepare_seed_media(manifest, tmp_path / "first")
     second = runner.prepare_seed_media(manifest, tmp_path / "second")
 
     assert first == second
     assert len(first) == len(manifest["files"])
     assert all(int(item["bytes"]) > 44 for item in first)
+    assert all(item["sha256"] for item in first)
