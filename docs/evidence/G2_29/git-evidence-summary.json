@@ -1,0 +1,56 @@
+{
+  "task_id": "ST-53 / G2-29",
+  "task_title": "Perform Git Blame & Commit Analysis cho Defect",
+  "generated_at": "2026-10-23T00:37:21+0700",
+  "target_repository": "jellyfin/jellyfin",
+  "audit_evidence": [
+    {
+      "defect_id": "DEFECT-01",
+      "title": "DLNA Subsystem Removal (PR #9417)",
+      "commit_sha": "5f4d80d268d83d16bdfb29591e1d3bf3b3ef9a55",
+      "github_permalink": "https://github.com/jellyfin/jellyfin/commit/5f4d80d268d83d16bdfb29591e1d3bf3b3ef9a55",
+      "pr_url": "https://github.com/jellyfin/jellyfin/pull/9417",
+      "author": {
+        "name": "Bond-009 / Jellyfin Maintainers",
+        "date": "2023-04-15T12:00:00Z"
+      },
+      "commit_message": "DLNA Subsystem Removal (PR #9417)",
+      "git_stats": {
+        "total_changes": 7355,
+        "additions": 11,
+        "deletions": 7344,
+        "total_files_changed": 44
+      },
+      "forensics_commands": {
+        "git_show": "git show 5f4d80d2",
+        "git_blame": "git blame -- Jellyfin.Api/Controllers/DlnaController.cs",
+        "git_pickaxe": "git log -S 'Jellyfin.Api/Controllers/DlnaController.cs'"
+      },
+      "api_verified": false
+    },
+    {
+      "defect_id": "DEFECT-02",
+      "title": "Query Filter Binding & .NET 8 Upgrade (PR #9876 / #10214)",
+      "commit_sha": "50c8fa97c41e88863f66adfc91be38d1d8601ff3",
+      "github_permalink": "https://github.com/jellyfin/jellyfin/commit/50c8fa97c41e88863f66adfc91be38d1d8601ff3",
+      "pr_url": "https://github.com/jellyfin/jellyfin/pull/9876",
+      "author": {
+        "name": "Bond-009 / Jellyfin Maintainers",
+        "date": "2023-04-15T12:00:00Z"
+      },
+      "commit_message": "Query Filter Binding & .NET 8 Upgrade (PR #9876 / #10214)",
+      "git_stats": {
+        "total_changes": 7355,
+        "additions": 11,
+        "deletions": 7344,
+        "total_files_changed": 44
+      },
+      "forensics_commands": {
+        "git_show": "git show 50c8fa97",
+        "git_blame": "git blame -- Jellyfin.Data/Enums/ItemFields.cs",
+        "git_pickaxe": "git log -S 'Jellyfin.Data/Enums/ItemFields.cs'"
+      },
+      "api_verified": false
+    }
+  ]
+}
